@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Tree of Life - Growth and Peace -->
+  
+  <!-- Roots -->
+  <path d="M50 85 Q45 80 42 75 Q45 70 50 70 Q55 70 58 75 Q55 80 50 85 Z" fill="#4B5563" opacity="0.6"/>
+  <path d="M50 85 Q50 80 50 75" stroke="#4B5563" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Trunk -->
+  <path d="M48 75 Q48 60 48 50 Q48 40 50 40 Q52 40 52 50 Q52 60 52 75" fill="#6B7280"/>
+  <path d="M50 40 Q50 60 50 75" stroke="#4B5563" stroke-width="3" fill="none" stroke-linecap="round"/>
+  
+  <!-- Main branches -->
+  <path d="M50 40 Q40 35 35 30 Q30 25 28 20" stroke="#6B7280" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M50 40 Q60 35 65 30 Q70 25 72 20" stroke="#6B7280" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M50 40 Q45 30 42 25" stroke="#6B7280" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M50 40 Q55 30 58 25" stroke="#6B7280" stroke-width="2" fill="none" stroke-linecap="round"/>
+  
+  <!-- Secondary branches -->
+  <path d="M35 30 Q32 28 30 26" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M35 30 Q38 28 40 26" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M65 30 Q68 28 70 26" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M65 30 Q62 28 60 26" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M42 25 Q40 23 38 21" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M58 25 Q60 23 62 21" stroke="#9CA3AF" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  
+  <!-- Leaves/foliage (simplified circles) -->
+  <circle cx="28" cy="20" r="4" fill="#2563EB" opacity="0.7"/>
+  <circle cx="35" cy="26" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="40" cy="26" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="38" cy="21" r="3" fill="#60A5FA" opacity="0.5"/>
+  <circle cx="42" cy="25" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="50" cy="30" r="4" fill="#2563EB" opacity="0.7"/>
+  <circle cx="58" cy="25" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="62" cy="21" r="3" fill="#60A5FA" opacity="0.5"/>
+  <circle cx="60" cy="26" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="65" cy="30" r="3.5" fill="#3B82F6" opacity="0.6"/>
+  <circle cx="72" cy="20" r="4" fill="#2563EB" opacity="0.7"/>
+  
+  <!-- Central circle (life/unity symbol) -->
+  <circle cx="50" cy="40" r="3" fill="#1E40AF" opacity="0.8"/>
+</svg>
