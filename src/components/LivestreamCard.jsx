@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { Play, Clock } from 'lucide-react'
+import { Play, Clock, Radio } from 'lucide-react'
 import { EVENT_DATA } from '../constants'
 
 const Card = styled.div`
@@ -115,6 +115,60 @@ const VideoContainer = styled.div`
   overflow: hidden;
   border-radius: ${props => props.theme.borderRadius.md};
   background-color: #000;
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`
+
+const VideosContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+`
+
+const VideoLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: ${props => props.theme.typography.sizes.lg};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+  color: ${props => props.theme.colors.text.primary};
+`
+
+const LiveIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`
+
+const PulsingDot = styled.div`
+  width: 0.75rem;
+  height: 0.75rem;
+  background-color: #ef4444;
+  border-radius: ${props => props.theme.borderRadius.full};
+  animation: pulse 2s ease-in-out infinite;
+
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(1.2);
+    }
+  }
+`
+
+const VideoWrapper = styled.div`
+  margin-bottom: 1.5rem;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `
 
 const VideoIframe = styled.iframe`
@@ -216,7 +270,7 @@ export default function LivestreamCard() {
 
   useEffect(() => {
     const calculateTimeRemaining = () => {
-      const eventDate = new Date(EVENT_DATA.eventDateTime)
+      const eventDate = new Date(EVENT_DATA.livestreamDateTime || EVENT_DATA.eventDateTime)
       const now = new Date()
       const difference = eventDate - now
 
@@ -251,6 +305,14 @@ export default function LivestreamCard() {
     return `https://www.youtube.com/embed/${EVENT_DATA.youtubeVideoId}?autoplay=1&rel=0`
   }
 
+  const getYouTubeLoopEmbedUrl = () => {
+    if (!EVENT_DATA.youtubeLoopVideoId) return null
+    
+    // For looping videos, use loop=1&playlist=VIDEO_ID (playlist parameter is required for loop to work)
+    // Note: autoplay removed as per user request
+    return `https://www.youtube.com/embed/${EVENT_DATA.youtubeLoopVideoId}?loop=1&playlist=${EVENT_DATA.youtubeLoopVideoId}&rel=0`
+  }
+
   const getYouTubeThumbnail = () => {
     if (!EVENT_DATA.youtubeVideoId) return null
     
@@ -269,7 +331,7 @@ export default function LivestreamCard() {
     return (
       <SmallCountdownContainer>
         <SmallCountdownTitle>
-          Livestream begins on {EVENT_DATA.displayDate} at {EVENT_DATA.displayTime}
+          Livestream begins on {EVENT_DATA.displayDate} at {EVENT_DATA.livestreamDisplayTime || EVENT_DATA.displayTime}
         </SmallCountdownTitle>
         <SmallCountdownGrid>
           <SmallCountdownItem>
@@ -293,7 +355,7 @@ export default function LivestreamCard() {
     )
   }
 
-  // If video ID exists and user clicked to show embed, show the YouTube embed
+  // If video ID exists and user clicked to show embed, show the YouTube embeds
   if (showEmbed && EVENT_DATA.youtubeVideoId) {
     return (
       <Card id="watch-live">
@@ -301,14 +363,41 @@ export default function LivestreamCard() {
           <Play size={28} />
           Watch Live
         </Title>
-        <VideoContainer>
-          <VideoIframe
-            src={getYouTubeEmbedUrl()}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-            allowFullScreen
-            title="Livestream"
-          />
-        </VideoContainer>
+        <VideosContainer>
+          {/* Main livestream video */}
+          <VideoWrapper>
+            <VideoLabel>
+              <LiveIndicator>
+                <PulsingDot />
+                <Radio size={18} />
+              </LiveIndicator>
+              Live Feed
+            </VideoLabel>
+            <VideoContainer>
+              <VideoIframe
+                src={getYouTubeEmbedUrl()}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+                title="Livestream"
+              />
+            </VideoContainer>
+          </VideoWrapper>
+          
+          {/* Looping video below */}
+          {EVENT_DATA.youtubeLoopVideoId && (
+            <VideoWrapper>
+              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+              <VideoContainer>
+                <VideoIframe
+                  src={getYouTubeLoopEmbedUrl()}
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Memorial Video"
+                />
+              </VideoContainer>
+            </VideoWrapper>
+          )}
+        </VideosContainer>
         {!isLive && renderSmallCountdown()}
       </Card>
     )
