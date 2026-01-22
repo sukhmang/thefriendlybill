@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { Play, Clock, Radio } from 'lucide-react'
+import { Play, Clock, Radio, X } from 'lucide-react'
 import { EVENT_DATA } from '../constants'
 
 const Card = styled.div`
@@ -183,6 +183,133 @@ const ComingSoonPlaceholder = styled.div`
   font-weight: ${props => props.theme.typography.weights.semibold};
 `
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.98);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.2s ease-out;
+  overflow: hidden; /* Prevent scrolling */
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+`
+
+const ModalContent = styled.div`
+  width: 100%;
+  max-width: 1200px;
+  height: calc(100vh - 4rem); /* Account for padding */
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  animation: zoomIn 0.2s ease-out;
+  overflow: visible; /* Allow videos to be visible */
+
+  @keyframes zoomIn {
+    from {
+      transform: scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+`
+
+const ModalCloseButton = styled.button`
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  border-radius: ${props => props.theme.borderRadius.full};
+  width: 3.5rem;
+  height: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+  transition: all 0.2s ease;
+  z-index: 1001;
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+  }
+
+  svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+`
+
+const ModalVideoContainer = styled.div`
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0; /* Allow flex shrinking */
+  overflow: hidden;
+  border-radius: ${props => props.theme.borderRadius.md};
+  background-color: #000;
+  
+  /* Maintain 16:9 aspect ratio using padding-bottom technique */
+  &::before {
+    content: '';
+    display: block;
+    padding-bottom: 56.25%; /* 16:9 aspect ratio (9/16 = 0.5625) */
+  }
+`
+
+const ModalVideoIframe = styled.iframe`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+`
+
+const ModalVideoLabel = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: ${props => props.theme.typography.sizes.lg};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+  color: white;
+`
+
+const ModalVideoWrapper = styled.div`
+  flex: 1 1 0; /* Equal flex basis, allow shrinking */
+  min-height: 0; /* Allow flex shrinking */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+`
+
 const VideoIframe = styled.iframe`
   position: absolute;
   top: 0;
@@ -237,8 +364,8 @@ const PreviewOverlay = styled.div`
 `
 
 const PlayButton = styled.div`
-  width: 5rem;
-  height: 5rem;
+  width: 4.5rem;
+  height: 4.5rem;
   background: rgba(255, 255, 255, 0.95);
   border-radius: ${props => props.theme.borderRadius.full};
   display: flex;
@@ -247,6 +374,7 @@ const PlayButton = styled.div`
   color: ${props => props.theme.colors.accent};
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 0.75rem;
 
   ${PreviewContainer}:hover & {
     transform: scale(1.1);
@@ -254,18 +382,19 @@ const PlayButton = styled.div`
   }
 
   svg {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 2rem;
+    height: 2rem;
     margin-left: 0.25rem; /* Slight offset for play icon */
   }
 `
 
 const WatchLiveText = styled.div`
-  font-size: ${props => props.theme.typography.sizes['2xl']};
-  font-weight: ${props => props.theme.typography.weights.bold};
+  font-size: ${props => props.theme.typography.sizes.sm};
+  font-weight: ${props => props.theme.typography.weights.semibold};
   color: white;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.05em;
+  margin-top: 0;
 `
 
 const NoVideoMessage = styled.div`
@@ -279,6 +408,20 @@ export default function LivestreamCard() {
   const [timeRemaining, setTimeRemaining] = useState(null)
   const [isLive, setIsLive] = useState(false)
   const [showEmbed, setShowEmbed] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+  const [showModal, setShowModal] = useState(false)
+
+  // Detect if desktop (screen width >= 768px)
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 768)
+    }
+
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [])
 
   useEffect(() => {
     const calculateTimeRemaining = () => {
@@ -333,8 +476,30 @@ export default function LivestreamCard() {
   }
 
   const handlePreviewClick = () => {
-    setShowEmbed(true)
+    if (isDesktop) {
+      setShowModal(true)
+      document.body.style.overflow = 'hidden'
+    } else {
+      setShowEmbed(true)
+    }
   }
+
+  const handleCloseModal = () => {
+    setShowModal(false)
+    document.body.style.overflow = 'unset'
+  }
+
+  useEffect(() => {
+    if (showModal) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [showModal])
 
   // Render small countdown component
   const renderSmallCountdown = () => {
@@ -367,105 +532,113 @@ export default function LivestreamCard() {
     )
   }
 
-  // If video ID exists and user clicked to show embed, show the YouTube embeds
-  if (showEmbed && EVENT_DATA.youtubeVideoId) {
+  // Render modal for desktop
+  const renderModal = () => {
+    if (!showModal || !isDesktop) return null
+
     return (
-      <Card id="watch-live">
-        <Title>
-          <Play size={28} />
-          Watch Live
-        </Title>
-        <VideosContainer>
-          {/* Main livestream video */}
-          <VideoWrapper>
-            <VideoLabel>
-              <LiveIndicator>
-                <PulsingDot />
-                <Radio size={18} />
-              </LiveIndicator>
-              Live Feed
-            </VideoLabel>
-            <VideoContainer>
-              <VideoIframe
-                src={getYouTubeEmbedUrl()}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                allowFullScreen
-                title="Livestream"
-              />
-            </VideoContainer>
-          </VideoWrapper>
-          
-          {/* Slideshow section */}
+      <ModalOverlay onClick={handleCloseModal}>
+        <ModalCloseButton onClick={handleCloseModal} aria-label="Close">
+          <X />
+        </ModalCloseButton>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          {/* Slideshow on top */}
           {EVENT_DATA.youtubeLoopVideoId ? (
-            <VideoWrapper>
-              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-              <VideoContainer>
-                <VideoIframe
+            <ModalVideoWrapper>
+              <ModalVideoContainer>
+                <ModalVideoIframe
                   src={getYouTubeLoopEmbedUrl()}
                   allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                   allowFullScreen
                   title="Memorial Video"
                 />
-              </VideoContainer>
-            </VideoWrapper>
+              </ModalVideoContainer>
+            </ModalVideoWrapper>
           ) : (
-            <VideoWrapper>
-              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-              <ComingSoonPlaceholder>
+            <ModalVideoWrapper>
+              <ComingSoonPlaceholder style={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}>
                 Coming soon
               </ComingSoonPlaceholder>
-            </VideoWrapper>
+            </ModalVideoWrapper>
           )}
-        </VideosContainer>
-        {!isLive && renderSmallCountdown()}
-      </Card>
+
+          {/* Live Feed below */}
+          {EVENT_DATA.youtubeVideoId && (
+            <ModalVideoWrapper>
+              <ModalVideoContainer>
+                <ModalVideoIframe
+                  src={getYouTubeEmbedUrl()}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Livestream"
+                />
+              </ModalVideoContainer>
+            </ModalVideoWrapper>
+          )}
+        </ModalContent>
+      </ModalOverlay>
+    )
+  }
+
+  // If video ID exists and user clicked to show embed (mobile), show the YouTube embeds
+  if (showEmbed && EVENT_DATA.youtubeVideoId && !isDesktop) {
+    return (
+      <>
+        <Card id="watch-live">
+          <VideosContainer>
+            {/* Slideshow on top (mobile) */}
+            {EVENT_DATA.youtubeLoopVideoId ? (
+              <VideoWrapper>
+                <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+                <VideoContainer>
+                  <VideoIframe
+                    src={getYouTubeLoopEmbedUrl()}
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    allowFullScreen
+                    title="Memorial Video"
+                  />
+                </VideoContainer>
+              </VideoWrapper>
+            ) : (
+              <VideoWrapper>
+                <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+                <ComingSoonPlaceholder>
+                  Coming soon
+                </ComingSoonPlaceholder>
+              </VideoWrapper>
+            )}
+
+            {/* Live Feed below (mobile) */}
+            <VideoWrapper>
+              <VideoLabel>
+                <LiveIndicator>
+                  <PulsingDot />
+                  <Radio size={18} />
+                </LiveIndicator>
+                Live Feed
+              </VideoLabel>
+              <VideoContainer>
+                <VideoIframe
+                  src={getYouTubeEmbedUrl()}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Livestream"
+                />
+              </VideoContainer>
+            </VideoWrapper>
+          </VideosContainer>
+          {!isLive && renderSmallCountdown()}
+        </Card>
+      </>
     )
   }
 
   // If live and video ID exists, show blurred preview with "Watch Live"
   if (isLive && EVENT_DATA.youtubeVideoId) {
     return (
-      <Card id="watch-live">
-        <Title>
-          <Play size={28} />
-          Watch Live
-        </Title>
-        <PreviewContainer
-          onClick={handlePreviewClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault()
-              handlePreviewClick()
-            }
-          }}
-          aria-label="Click to watch live stream"
-        >
-          <PreviewImage $thumbnailUrl={getYouTubeThumbnail()} />
-          <PreviewOverlay>
-            <PlayButton>
-              <Play fill="currentColor" />
-            </PlayButton>
-            <WatchLiveText>WATCH LIVE</WatchLiveText>
-          </PreviewOverlay>
-        </PreviewContainer>
-        {renderSmallCountdown()}
-      </Card>
-    )
-  }
-
-  // Show countdown if not live yet, but also show preview if video ID exists
-  if (!isLive && timeRemaining) {
-    return (
-      <Card id="watch-live">
-        <Title>
-          <Play size={28} />
-          Watch Live
-        </Title>
-        
-        {/* Show blurred preview prominently */}
-        {EVENT_DATA.youtubeVideoId && (
+      <>
+        {renderModal()}
+        <Card id="watch-live">
           <PreviewContainer
             onClick={handlePreviewClick}
             role="button"
@@ -476,7 +649,7 @@ export default function LivestreamCard() {
                 handlePreviewClick()
               }
             }}
-            aria-label="Click to watch live stream when available"
+            aria-label="Click to watch live stream"
           >
             <PreviewImage $thumbnailUrl={getYouTubeThumbnail()} />
             <PreviewOverlay>
@@ -486,28 +659,66 @@ export default function LivestreamCard() {
               <WatchLiveText>WATCH LIVE</WatchLiveText>
             </PreviewOverlay>
           </PreviewContainer>
-        )}
-        
-        {/* Small countdown at the bottom */}
-        {renderSmallCountdown()}
-      </Card>
+          {renderSmallCountdown()}
+        </Card>
+      </>
+    )
+  }
+
+  // Show countdown if not live yet, but also show preview if video ID exists
+  if (!isLive && timeRemaining) {
+    return (
+      <>
+        {renderModal()}
+        <Card id="watch-live">
+          {/* Show blurred preview prominently */}
+          {EVENT_DATA.youtubeVideoId && (
+            <PreviewContainer
+              onClick={handlePreviewClick}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  handlePreviewClick()
+                }
+              }}
+              aria-label="Click to watch live stream when available"
+            >
+              <PreviewImage $thumbnailUrl={getYouTubeThumbnail()} />
+              <PreviewOverlay>
+                <PlayButton>
+                  <Play fill="currentColor" />
+                </PlayButton>
+                <WatchLiveText>WATCH LIVE</WatchLiveText>
+              </PreviewOverlay>
+            </PreviewContainer>
+          )}
+          
+          {/* Small countdown at the bottom */}
+          {renderSmallCountdown()}
+        </Card>
+      </>
     )
   }
 
   // Fallback message
   return (
-    <Card id="watch-live">
-      <Title>
-        <Clock size={28} />
-        Livestream
-      </Title>
-      <NoVideoMessage>
-        {EVENT_DATA.youtubeVideoId 
-          ? 'The livestream will be available here when it begins.'
-          : 'Livestream information will be available soon.'}
-        <br />
-        {EVENT_DATA.displayDate && `Please check back on ${EVENT_DATA.displayDate} at ${EVENT_DATA.displayTime}.`}
-      </NoVideoMessage>
-    </Card>
+    <>
+      {renderModal()}
+      <Card id="watch-live">
+        <Title>
+          <Clock size={28} />
+          Livestream
+        </Title>
+        <NoVideoMessage>
+          {EVENT_DATA.youtubeVideoId 
+            ? 'The livestream will be available here when it begins.'
+            : 'Livestream information will be available soon.'}
+          <br />
+          {EVENT_DATA.displayDate && `Please check back on ${EVENT_DATA.displayDate} at ${EVENT_DATA.displayTime}.`}
+        </NoVideoMessage>
+      </Card>
+    </>
   )
 }
