@@ -153,7 +153,18 @@ export default function Hero() {
   const scrollToWatchLive = () => {
     const element = document.getElementById('watch-live')
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      // Get the sticky nav height to offset the scroll position
+      const nav = document.querySelector('nav')
+      const navHeight = nav ? nav.offsetHeight : 80 // Default to 80px if nav not found
+      
+      // Calculate the position where we want to scroll to (element position minus nav height plus some padding)
+      const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
+      const offsetPosition = elementPosition - navHeight - 20 // 20px extra padding
+      
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      })
     }
   }
 
