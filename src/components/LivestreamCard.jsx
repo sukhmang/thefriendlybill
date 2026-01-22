@@ -396,12 +396,26 @@ export default function LivestreamCard() {
           </VideoWrapper>
           
           {/* Slideshow section */}
-          <VideoWrapper>
-            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-            <ComingSoonPlaceholder>
-              Coming soon
-            </ComingSoonPlaceholder>
-          </VideoWrapper>
+          {EVENT_DATA.youtubeLoopVideoId ? (
+            <VideoWrapper>
+              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+              <VideoContainer>
+                <VideoIframe
+                  src={getYouTubeLoopEmbedUrl()}
+                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Memorial Video"
+                />
+              </VideoContainer>
+            </VideoWrapper>
+          ) : (
+            <VideoWrapper>
+              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+              <ComingSoonPlaceholder>
+                Coming soon
+              </ComingSoonPlaceholder>
+            </VideoWrapper>
+          )}
         </VideosContainer>
         {!isLive && renderSmallCountdown()}
       </Card>
