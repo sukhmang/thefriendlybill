@@ -171,6 +171,18 @@ const VideoWrapper = styled.div`
   }
 `
 
+const ComingSoonPlaceholder = styled.div`
+  width: 100%;
+  padding: 4rem 2rem;
+  background-color: ${props => props.theme.colors.background};
+  border: 2px dashed ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.md};
+  text-align: center;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${props => props.theme.typography.sizes.lg};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+`
+
 const VideoIframe = styled.iframe`
   position: absolute;
   top: 0;
@@ -383,20 +395,13 @@ export default function LivestreamCard() {
             </VideoContainer>
           </VideoWrapper>
           
-          {/* Looping video below */}
-          {EVENT_DATA.youtubeLoopVideoId && (
-            <VideoWrapper>
-              <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-              <VideoContainer>
-                <VideoIframe
-                  src={getYouTubeLoopEmbedUrl()}
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Memorial Video"
-                />
-              </VideoContainer>
-            </VideoWrapper>
-          )}
+          {/* Slideshow section */}
+          <VideoWrapper>
+            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+            <ComingSoonPlaceholder>
+              Coming soon
+            </ComingSoonPlaceholder>
+          </VideoWrapper>
         </VideosContainer>
         {!isLive && renderSmallCountdown()}
       </Card>
