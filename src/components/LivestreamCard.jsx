@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { Play, Clock, Radio, X } from 'lucide-react'
+import { Play, Clock, Radio, X, Info } from 'lucide-react'
 import { EVENT_DATA } from '../constants'
 
 const Card = styled.div`
@@ -310,6 +310,38 @@ const ModalVideoWrapper = styled.div`
   }
 `
 
+const InfoBubble = styled.div`
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background-color: ${props => props.theme.colors.accent}15;
+  border: 1px solid ${props => props.theme.colors.accent}40;
+  border-radius: ${props => props.theme.borderRadius.sm};
+  margin-bottom: 0.75rem;
+  font-size: ${props => props.theme.typography.sizes.xs};
+  color: ${props => props.theme.colors.text.secondary};
+  line-height: 1.5;
+
+  svg {
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: ${props => props.theme.colors.accent};
+    width: 1rem;
+    height: 1rem;
+  }
+`
+
+const ModalInfoBubble = styled(InfoBubble)`
+  background-color: rgba(37, 99, 235, 0.15);
+  border-color: rgba(37, 99, 235, 0.4);
+  color: rgba(255, 255, 255, 0.9);
+  
+  svg {
+    color: #60A5FA;
+  }
+`
+
 const VideoIframe = styled.iframe`
   position: absolute;
   top: 0;
@@ -542,7 +574,25 @@ export default function LivestreamCard() {
           <X />
         </ModalCloseButton>
         <ModalContent onClick={(e) => e.stopPropagation()}>
-          {/* Slideshow on top */}
+          {/* Live Feed on top */}
+          {EVENT_DATA.youtubeVideoId && (
+            <ModalVideoWrapper>
+              <ModalInfoBubble>
+                <Info size={16} />
+                <span>Please watch the slideshow while waiting for the service to start at 12:00PM MST. Livestream will end at approx 1:15 MST.</span>
+              </ModalInfoBubble>
+              <ModalVideoContainer>
+                <ModalVideoIframe
+                  src={getYouTubeEmbedUrl()}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Livestream"
+                />
+              </ModalVideoContainer>
+            </ModalVideoWrapper>
+          )}
+
+          {/* Slideshow below */}
           {EVENT_DATA.youtubeLoopVideoId ? (
             <ModalVideoWrapper>
               <ModalVideoContainer>
@@ -561,20 +611,6 @@ export default function LivestreamCard() {
               </ComingSoonPlaceholder>
             </ModalVideoWrapper>
           )}
-
-          {/* Live Feed below */}
-          {EVENT_DATA.youtubeVideoId && (
-            <ModalVideoWrapper>
-              <ModalVideoContainer>
-                <ModalVideoIframe
-                  src={getYouTubeEmbedUrl()}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Livestream"
-                />
-              </ModalVideoContainer>
-            </ModalVideoWrapper>
-          )}
         </ModalContent>
       </ModalOverlay>
     )
@@ -586,7 +622,30 @@ export default function LivestreamCard() {
       <>
         <Card id="watch-live">
           <VideosContainer>
-            {/* Slideshow on top (mobile) */}
+            {/* Live Feed on top (mobile) */}
+            <VideoWrapper>
+              <InfoBubble>
+                <Info size={16} />
+                <span>Please watch the slideshow while waiting for the service to start at 12:00PM MST. Livestream will end at approx 1:15 MST.</span>
+              </InfoBubble>
+              <VideoLabel>
+                <LiveIndicator>
+                  <PulsingDot />
+                  <Radio size={18} />
+                </LiveIndicator>
+                Live Feed
+              </VideoLabel>
+              <VideoContainer>
+                <VideoIframe
+                  src={getYouTubeEmbedUrl()}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                  title="Livestream"
+                />
+              </VideoContainer>
+            </VideoWrapper>
+
+            {/* Slideshow below (mobile) */}
             {EVENT_DATA.youtubeLoopVideoId ? (
               <VideoWrapper>
                 <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
@@ -607,25 +666,6 @@ export default function LivestreamCard() {
                 </ComingSoonPlaceholder>
               </VideoWrapper>
             )}
-
-            {/* Live Feed below (mobile) */}
-            <VideoWrapper>
-              <VideoLabel>
-                <LiveIndicator>
-                  <PulsingDot />
-                  <Radio size={18} />
-                </LiveIndicator>
-                Live Feed
-              </VideoLabel>
-              <VideoContainer>
-                <VideoIframe
-                  src={getYouTubeEmbedUrl()}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Livestream"
-                />
-              </VideoContainer>
-            </VideoWrapper>
           </VideosContainer>
           {!isLive && renderSmallCountdown()}
         </Card>
