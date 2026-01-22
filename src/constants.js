@@ -39,8 +39,8 @@ export const EVENT_DATA = {
   // YouTube Livestream
   // Video ID extracted from: https://www.youtube.com/live/CtLesw1JaBA?si=1mYuQgum65R4k9eY
   youtubeVideoId: "CtLesw1JaBA", // YouTube live stream video ID
-  // Second video for looping (extracted from: youtube.com/watch?v=tjJBYZsecms&feature=youtu.be)
-  youtubeLoopVideoId: "tjJBYZsecms", // YouTube video ID for looping video
+  // Slideshow video (extracted from: https://youtu.be/nWrGLzfLkyY)
+  youtubeLoopVideoId: "nWrGLzfLkyY", // YouTube video ID for slideshow video
   livestreamNote: "Livestream and Updates - www.baljitgrewal.ca",
   livestreamWebsite: "www.baljitgrewal.ca",
   
