@@ -154,45 +154,75 @@ const LoadMoreTrigger = styled.div`
   justify-content: center;
 `
 
-const FilterContainer = styled.div`
-  display: flex;
-  justify-content: center;
+const Badge = styled.div`
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding: 0.75rem;
-  background-color: ${props => props.theme.colors.background};
-  border-radius: ${props => props.theme.borderRadius.md};
-  flex-wrap: wrap;
+  padding: 0.5rem 1rem;
+  background-color: ${props => props.theme.colors.accent}15;
+  border: 1px solid ${props => props.theme.colors.accent}40;
+  border-radius: ${props => props.theme.borderRadius.sm};
+  font-size: ${props => props.theme.typography.sizes.xs};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+  color: ${props => props.theme.colors.accent};
+  margin-bottom: 1rem;
 `
 
-const FilterButton = styled.button`
+const ToggleContainer = styled.div`
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+`
+
+const ToggleLabel = styled.label`
   font-size: ${props => props.theme.typography.sizes.sm};
   font-weight: ${props => props.theme.typography.weights.semibold};
-  color: ${props => props.$active ? props.theme.colors.cardBackground : props.theme.colors.text.primary};
-  background-color: ${props => props.$active ? props.theme.colors.accent : props.theme.colors.cardBackground};
-  border: 2px solid ${props => props.$active ? props.theme.colors.accent : props.theme.colors.border};
+  color: ${props => props.theme.colors.text.primary};
+  margin-bottom: 0.25rem;
+`
+
+const ToggleWrapper = styled.div`
+  position: relative;
+  display: flex;
+  background-color: ${props => props.theme.colors.background};
+  border: 2px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.md};
+  padding: 0.25rem;
+  overflow: hidden;
+`
+
+const ToggleSlider = styled.div`
+  position: absolute;
+  top: 0.25rem;
+  left: ${props => {
+    if (props.$value === 'both') return '0.25rem'
+    if (props.$value === 'images') return 'calc(33.333% + 0.125rem)'
+    return 'calc(66.666% + 0.125rem)'
+  }};
+  width: calc(33.333% - 0.5rem);
+  height: calc(100% - 0.5rem);
+  background-color: ${props => props.theme.colors.accent};
+  border-radius: ${props => props.theme.borderRadius.sm};
+  transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+`
+
+const ToggleOption = styled.button`
+  position: relative;
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: ${props => props.theme.typography.sizes.sm};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+  color: ${props => props.$active ? props.theme.colors.cardBackground : props.theme.colors.text.secondary};
+  background: transparent;
+  border: none;
   border-radius: ${props => props.theme.borderRadius.sm};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
+  z-index: 1;
 
   &:hover {
-    background-color: ${props => props.$active ? props.theme.colors.accentHover : props.theme.colors.border};
-    border-color: ${props => props.$active ? props.theme.colors.accentHover : props.theme.colors.accent};
-  }
-
-  svg {
-    width: 1.25rem;
-    height: 1.25rem;
-  }
-
-  @media (max-width: 640px) {
-    padding: 0.625rem 1.25rem;
-    font-size: ${props => props.theme.typography.sizes.xs};
+    color: ${props => props.$active ? props.theme.colors.cardBackground : props.theme.colors.text.primary};
   }
 `
 
@@ -265,7 +295,7 @@ export default function Gallery() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [visibleItems, setVisibleItems] = useState(ITEMS_PER_BATCH)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [filter, setFilter] = useState('both') // 'both', 'images', 'gifs'
+  const [filter, setFilter] = useState('both') // 'both', 'images', 'videos'
   const loadMoreRef = useRef(null)
 
   // Load images from JSON file
@@ -326,7 +356,7 @@ export default function Gallery() {
       return galleryItems
     } else if (filter === 'images') {
       return galleryItems.filter(item => item.type === 'image')
-    } else if (filter === 'gifs') {
+    } else if (filter === 'videos') {
       return galleryItems.filter(item => item.type === 'gif' || item.type === 'video')
     }
     return galleryItems
@@ -434,35 +464,38 @@ export default function Gallery() {
           Gallery
         </Title>
 
-        <FilterContainer>
-          <FilterButton
-            $active={filter === 'both'}
-            onClick={() => setFilter('both')}
-            aria-label="Show all images and GIFs"
-          >
-            <Images size={18} />
-            Both
-          </FilterButton>
-          <FilterButton
-            $active={filter === 'images'}
-            onClick={() => setFilter('images')}
-            aria-label="Show images only"
-          >
-            <Image size={18} />
-            Images Only
-          </FilterButton>
-          <FilterButton
-            $active={filter === 'gifs'}
-            onClick={() => setFilter('gifs')}
-            aria-label="Show GIFs only"
-          >
-            <Video size={18} />
-            GIFs Only
-          </FilterButton>
-        </FilterContainer>
+        <Badge>More pictures coming soon!</Badge>
+
+        <ToggleContainer>
+          <ToggleLabel>Media Type</ToggleLabel>
+          <ToggleWrapper>
+            <ToggleSlider $value={filter} />
+            <ToggleOption
+              $active={filter === 'both'}
+              onClick={() => setFilter('both')}
+              aria-label="Show all media"
+            >
+              Both
+            </ToggleOption>
+            <ToggleOption
+              $active={filter === 'images'}
+              onClick={() => setFilter('images')}
+              aria-label="Show images only"
+            >
+              Images
+            </ToggleOption>
+            <ToggleOption
+              $active={filter === 'videos'}
+              onClick={() => setFilter('videos')}
+              aria-label="Show videos only"
+            >
+              Videos
+            </ToggleOption>
+          </ToggleWrapper>
+        </ToggleContainer>
 
         <ResultsCount>
-          Showing {displayedItems.length} of {filteredItems.length} {filter === 'both' ? 'items' : filter === 'images' ? 'images' : 'GIFs'}
+          Showing {displayedItems.length} of {filteredItems.length} {filter === 'both' ? 'items' : filter === 'images' ? 'images' : 'videos'}
         </ResultsCount>
 
         <Grid>
