@@ -437,101 +437,19 @@ const NoVideoMessage = styled.div`
 `
 
 export default function LivestreamCard() {
-  const [timeRemaining, setTimeRemaining] = useState(null)
-  const [isLive, setIsLive] = useState(false)
-  const [showEmbed, setShowEmbed] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
-  const [showModal, setShowModal] = useState(false)
-
-  // Detect if desktop (screen width >= 768px)
-  useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 768)
-    }
-
-    checkDesktop()
-    window.addEventListener('resize', checkDesktop)
-
-    return () => window.removeEventListener('resize', checkDesktop)
-  }, [])
-
-  useEffect(() => {
-    const calculateTimeRemaining = () => {
-      const eventDate = new Date(EVENT_DATA.livestreamDateTime || EVENT_DATA.eventDateTime)
-      const now = new Date()
-      const difference = eventDate - now
-
-      if (difference <= 0) {
-        setIsLive(true)
-        setTimeRemaining(null)
-        return
-      }
-
-      setIsLive(false)
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000)
-
-      setTimeRemaining({ days, hours, minutes, seconds })
-    }
-
-    // Calculate immediately
-    calculateTimeRemaining()
-
-    // Update every second
-    const interval = setInterval(calculateTimeRemaining, 1000)
-
-    return () => clearInterval(interval)
-  }, [])
+  // Videos are now recorded, show them directly
 
   const getYouTubeEmbedUrl = () => {
     if (!EVENT_DATA.youtubeVideoId) return null
-    
-    // For live streams, use the embed format
-    return `https://www.youtube.com/embed/${EVENT_DATA.youtubeVideoId}?autoplay=1&rel=0`
+    // For recorded videos
+    return `https://www.youtube.com/embed/${EVENT_DATA.youtubeVideoId}?rel=0`
   }
 
   const getYouTubeLoopEmbedUrl = () => {
     if (!EVENT_DATA.youtubeLoopVideoId) return null
-    
-    // For looping videos, use loop=1&playlist=VIDEO_ID (playlist parameter is required for loop to work)
-    // Note: autoplay removed as per user request
+    // For looping videos
     return `https://www.youtube.com/embed/${EVENT_DATA.youtubeLoopVideoId}?loop=1&playlist=${EVENT_DATA.youtubeLoopVideoId}&rel=0`
   }
-
-  const getYouTubeThumbnail = () => {
-    if (!EVENT_DATA.youtubeVideoId) return null
-    
-    // Get high-quality thumbnail from YouTube
-    return `https://img.youtube.com/vi/${EVENT_DATA.youtubeVideoId}/maxresdefault.jpg`
-  }
-
-  const handlePreviewClick = () => {
-    if (isDesktop) {
-      setShowModal(true)
-      document.body.style.overflow = 'hidden'
-    } else {
-      setShowEmbed(true)
-    }
-  }
-
-  const handleCloseModal = () => {
-    setShowModal(false)
-    document.body.style.overflow = 'unset'
-  }
-
-  useEffect(() => {
-    if (showModal) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = 'unset'
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [showModal])
 
   // Render small countdown component
   const renderSmallCountdown = () => {
@@ -564,201 +482,49 @@ export default function LivestreamCard() {
     )
   }
 
-  // Render modal for desktop
-  const renderModal = () => {
-    if (!showModal || !isDesktop) return null
-
-    return (
-      <ModalOverlay onClick={handleCloseModal}>
-        <ModalCloseButton onClick={handleCloseModal} aria-label="Close">
-          <X />
-        </ModalCloseButton>
-        <ModalContent onClick={(e) => e.stopPropagation()}>
-          {/* Live Feed on top */}
-          {EVENT_DATA.youtubeVideoId && (
-            <ModalVideoWrapper>
-              <ModalInfoBubble>
-                <Info size={16} />
-                <span>Please watch the slideshow while waiting for the service to start at 12:00PM MST. Livestream will end at approx 1:15 MST.</span>
-              </ModalInfoBubble>
-              <ModalVideoContainer>
-                <ModalVideoIframe
-                  src={getYouTubeEmbedUrl()}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Livestream"
-                />
-              </ModalVideoContainer>
-            </ModalVideoWrapper>
-          )}
-
-          {/* Slideshow below */}
-          {EVENT_DATA.youtubeLoopVideoId ? (
-            <ModalVideoWrapper>
-              <ModalVideoContainer>
-                <ModalVideoIframe
-                  src={getYouTubeLoopEmbedUrl()}
-                  allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Memorial Video"
-                />
-              </ModalVideoContainer>
-            </ModalVideoWrapper>
-          ) : (
-            <ModalVideoWrapper>
-              <ComingSoonPlaceholder style={{ color: 'white', borderColor: 'rgba(255,255,255,0.3)' }}>
-                Coming soon
-              </ComingSoonPlaceholder>
-            </ModalVideoWrapper>
-          )}
-        </ModalContent>
-      </ModalOverlay>
-    )
-  }
-
-  // If video ID exists and user clicked to show embed (mobile), show the YouTube embeds
-  if (showEmbed && EVENT_DATA.youtubeVideoId && !isDesktop) {
-    return (
-      <>
-        <Card id="watch-live">
-          <VideosContainer>
-            {/* Live Feed on top (mobile) */}
-            <VideoWrapper>
-              <InfoBubble>
-                <Info size={16} />
-                <span>Please watch the slideshow while waiting for the service to start at 12:00PM MST. Livestream will end at approx 1:15 MST.</span>
-              </InfoBubble>
-              <VideoLabel>
-                <LiveIndicator>
-                  <PulsingDot />
-                  <Radio size={18} />
-                </LiveIndicator>
-                Live Feed
-              </VideoLabel>
-              <VideoContainer>
-                <VideoIframe
-                  src={getYouTubeEmbedUrl()}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                  allowFullScreen
-                  title="Livestream"
-                />
-              </VideoContainer>
-            </VideoWrapper>
-
-            {/* Slideshow below (mobile) */}
-            {EVENT_DATA.youtubeLoopVideoId ? (
-              <VideoWrapper>
-                <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-                <VideoContainer>
-                  <VideoIframe
-                    src={getYouTubeLoopEmbedUrl()}
-                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
-                    allowFullScreen
-                    title="Memorial Video"
-                  />
-                </VideoContainer>
-              </VideoWrapper>
-            ) : (
-              <VideoWrapper>
-                <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
-                <ComingSoonPlaceholder>
-                  Coming soon
-                </ComingSoonPlaceholder>
-              </VideoWrapper>
-            )}
-          </VideosContainer>
-          {!isLive && renderSmallCountdown()}
-        </Card>
-      </>
-    )
-  }
-
-  // If live and video ID exists, show blurred preview with "Watch Live"
-  if (isLive && EVENT_DATA.youtubeVideoId) {
-    return (
-      <>
-        {renderModal()}
-        <Card id="watch-live">
-          <PreviewContainer
-            onClick={handlePreviewClick}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handlePreviewClick()
-              }
-            }}
-            aria-label="Click to watch live stream"
-          >
-            <PreviewImage $thumbnailUrl={getYouTubeThumbnail()} />
-            <PreviewOverlay>
-              <PlayButton>
-                <Play fill="currentColor" />
-              </PlayButton>
-              <WatchLiveText>WATCH LIVE</WatchLiveText>
-            </PreviewOverlay>
-          </PreviewContainer>
-          {renderSmallCountdown()}
-        </Card>
-      </>
-    )
-  }
-
-  // Show countdown if not live yet, but also show preview if video ID exists
-  if (!isLive && timeRemaining) {
-    return (
-      <>
-        {renderModal()}
-        <Card id="watch-live">
-          {/* Show blurred preview prominently */}
-          {EVENT_DATA.youtubeVideoId && (
-            <PreviewContainer
-              onClick={handlePreviewClick}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handlePreviewClick()
-                }
-              }}
-              aria-label="Click to watch live stream when available"
-            >
-              <PreviewImage $thumbnailUrl={getYouTubeThumbnail()} />
-              <PreviewOverlay>
-                <PlayButton>
-                  <Play fill="currentColor" />
-                </PlayButton>
-                <WatchLiveText>WATCH LIVE</WatchLiveText>
-              </PreviewOverlay>
-            </PreviewContainer>
-          )}
-          
-          {/* Small countdown at the bottom */}
-          {renderSmallCountdown()}
-        </Card>
-      </>
-    )
-  }
-
-  // Fallback message
+  // Show videos directly (recorded content, no modal needed)
   return (
-    <>
-      {renderModal()}
-      <Card id="watch-live">
-        <Title>
-          <Clock size={28} />
-          Livestream
-        </Title>
-        <NoVideoMessage>
-          {EVENT_DATA.youtubeVideoId 
-            ? 'The livestream will be available here when it begins.'
-            : 'Livestream information will be available soon.'}
-          <br />
-          {EVENT_DATA.displayDate && `Please check back on ${EVENT_DATA.displayDate} at ${EVENT_DATA.displayTime}.`}
-        </NoVideoMessage>
-      </Card>
-    </>
+    <Card id="watch">
+      <VideosContainer>
+        {/* Slideshow on top */}
+        {EVENT_DATA.youtubeLoopVideoId ? (
+          <VideoWrapper>
+            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+            <VideoContainer>
+              <VideoIframe
+                src={getYouTubeLoopEmbedUrl()}
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+                title="Memorial Video"
+              />
+            </VideoContainer>
+          </VideoWrapper>
+        ) : (
+          <VideoWrapper>
+            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+            <ComingSoonPlaceholder>
+              Coming soon
+            </ComingSoonPlaceholder>
+          </VideoWrapper>
+        )}
+
+        {/* Funeral Service below */}
+        {EVENT_DATA.youtubeVideoId && (
+          <VideoWrapper>
+            <VideoLabel>
+              Funeral Service
+            </VideoLabel>
+            <VideoContainer>
+              <VideoIframe
+                src={getYouTubeEmbedUrl()}
+                allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                allowFullScreen
+                title="Funeral Service"
+              />
+            </VideoContainer>
+          </VideoWrapper>
+        )}
+      </VideosContainer>
+    </Card>
   )
 }
