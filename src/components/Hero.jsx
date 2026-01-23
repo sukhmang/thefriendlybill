@@ -197,9 +197,9 @@ export default function Hero() {
               <Play fill="currentColor" />
               Slideshow
             </CTAButton>
-            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Funeral Service">
+            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Service">
               <Play fill="currentColor" />
-              Funeral Service
+              Service
             </CTAButton>
           </ButtonWrapper>
         </TextContent>
