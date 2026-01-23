@@ -102,9 +102,12 @@ const WelcomeText = styled.p`
 const ButtonWrapper = styled.div`
   width: 100%;
   display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
   justify-content: center;
 
   @media (min-width: 640px) {
+    flex-direction: row;
     justify-content: flex-start;
     width: auto;
   }
@@ -150,8 +153,8 @@ const CTAButton = styled.button`
 `
 
 export default function Hero() {
-  const scrollToWatchLive = () => {
-    const element = document.getElementById('watch-live')
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId)
     if (element) {
       // Get the sticky nav height to offset the scroll position
       const nav = document.querySelector('nav')
@@ -190,9 +193,13 @@ export default function Hero() {
             {MEMORIAL_DATA.welcomeMessage}
           </WelcomeText>
           <ButtonWrapper>
-            <CTAButton onClick={scrollToWatchLive} aria-label="Watch Live Stream">
+            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Slideshow">
               <Play fill="currentColor" />
-              Watch Live
+              Slideshow
+            </CTAButton>
+            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Funeral Service">
+              <Play fill="currentColor" />
+              Funeral Service
             </CTAButton>
           </ButtonWrapper>
         </TextContent>

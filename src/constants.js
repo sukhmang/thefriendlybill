@@ -64,7 +64,7 @@ export const EVENT_DATA = {
         country: "Canada",
         full: "1410 Horsehill Rd NW, Edmonton, AB T5Y 6G6, Canada"
       },
-      isPast: false
+      isPast: true
     },
     {
       name: "Celebration of Life in Vancouver",

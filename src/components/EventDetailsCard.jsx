@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { Calendar, Clock, MapPin, Navigation, Download, Phone, X } from 'lucide-react'
+import { Calendar, Clock, MapPin, Navigation, Download, Phone, X, ChevronDown, ChevronUp } from 'lucide-react'
 import { EVENT_DATA } from '../constants'
 
 const Card = styled.div`
@@ -47,6 +47,45 @@ const PastEventLabel = styled.span`
   background-color: ${props => props.theme.colors.background};
   color: ${props => props.theme.colors.text.secondary};
   border-radius: ${props => props.theme.borderRadius.sm};
+`
+
+const CollapsibleSection = styled.div`
+  margin-top: 2rem;
+  border-top: 2px solid ${props => props.theme.colors.border};
+  padding-top: 1.5rem;
+`
+
+const CollapsibleHeader = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${props => props.theme.typography.sizes.base};
+  font-weight: ${props => props.theme.typography.weights.semibold};
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: ${props => props.theme.colors.text.primary};
+  }
+
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+    transition: transform 0.2s ease;
+  }
+`
+
+const CollapsibleContent = styled.div`
+  overflow: hidden;
+  max-height: ${props => props.$isOpen ? '5000px' : '0'};
+  transition: max-height 0.3s ease-out;
+  opacity: ${props => props.$isOpen ? '1' : '0'};
+  transition: opacity 0.3s ease-out, max-height 0.3s ease-out;
 `
 
 const BadgeContainer = styled.span`
@@ -491,13 +530,24 @@ export default function EventDetailsCard() {
     }
   }, [showProgramModal])
 
+  const [showPastEvents, setShowPastEvents] = useState(false)
+
   const mainEvent = {
     name: "Funeral Service",
     date: EVENT_DATA.displayDate,
     time: EVENT_DATA.displayTime,
     venueName: EVENT_DATA.venueName,
-    address: EVENT_DATA.address
+    address: EVENT_DATA.address,
+    isPast: true
   }
+
+  // Separate past and current events
+  const pastEvents = [
+    mainEvent,
+    ...(EVENT_DATA.additionalEvents || []).filter(event => event.isPast)
+  ]
+
+  const currentEvents = (EVENT_DATA.additionalEvents || []).filter(event => !event.isPast)
 
   return (
     <>
@@ -507,12 +557,28 @@ export default function EventDetailsCard() {
           Event Details
         </Title>
 
-        {renderEventDetails(mainEvent, true, handleShowProgram)}
-
-        {EVENT_DATA.additionalEvents && EVENT_DATA.additionalEvents.length > 0 && (
+        {/* Current Events - Celebration of Life */}
+        {currentEvents.length > 0 && (
           <>
-            {EVENT_DATA.additionalEvents.map((event) => renderEventDetails(event, false))}
+            {currentEvents.map((event) => renderEventDetails(event, false))}
           </>
+        )}
+
+        {/* Past Events - Collapsible Section */}
+        {pastEvents.length > 0 && (
+          <CollapsibleSection>
+            <CollapsibleHeader
+              onClick={() => setShowPastEvents(!showPastEvents)}
+              aria-expanded={showPastEvents}
+              aria-label={showPastEvents ? 'Collapse past events' : 'Expand past events'}
+            >
+              <span>Past Events</span>
+              {showPastEvents ? <ChevronUp /> : <ChevronDown />}
+            </CollapsibleHeader>
+            <CollapsibleContent $isOpen={showPastEvents}>
+              {pastEvents.map((event) => renderEventDetails(event, false))}
+            </CollapsibleContent>
+          </CollapsibleSection>
         )}
       </Card>
 

@@ -72,11 +72,11 @@ export default function StickyNav() {
       <NavContainer>
         <NavContent>
           <NavButton
-            onClick={() => scrollToSection('watch-live')}
-            aria-label="Watch Live"
+            onClick={() => scrollToSection('watch')}
+            aria-label="Watch"
           >
             <Video />
-            <span>Watch Live</span>
+            <span>Watch</span>
           </NavButton>
           
           <NavButton
