@@ -75,6 +75,50 @@ const VideosGrid = styled.div`
   }
 `
 
+const CollectionCard = styled.div`
+  background-color: ${props => props.theme.colors.cardBackground};
+  border-radius: ${props => props.theme.borderRadius.md};
+  box-shadow: ${props => props.theme.shadows.lg};
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  grid-column: 1 / -1; /* Span full width */
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: ${props => props.theme.shadows.lg};
+  }
+`
+
+const CollectionVideosGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  padding: 1.5rem;
+
+  @media (max-width: ${props => props.theme.breakpoints.mobile}) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+`
+
+const CollectionVideoWrapper = styled.div`
+  position: relative;
+  width: 100%;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  background-color: #000;
+  overflow: hidden;
+  border-radius: ${props => props.theme.borderRadius.sm};
+
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+`
+
 const VideoCard = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
   border-radius: ${props => props.theme.borderRadius.md};
@@ -214,6 +258,12 @@ export default function HomeVideos() {
     )
   }
 
+  // Separate collections from individual videos
+  // Collections have both 'collection' and 'videos' properties
+  // Individual videos have 'id' and 'title' properties (but not 'collection' or 'videos')
+  const collections = HOME_VIDEOS.filter(v => v.collection && Array.isArray(v.videos) && v.videos.length > 0)
+  const individualVideos = HOME_VIDEOS.filter(v => v.id && v.title && !v.collection)
+
   return (
     <Container>
       <Header>
@@ -226,7 +276,76 @@ export default function HomeVideos() {
       </Header>
 
       <VideosGrid>
-        {HOME_VIDEOS.map((video, index) => (
+        {/* Render collections first */}
+        {collections.map((collection, collectionIndex) => (
+          <CollectionCard key={`collection-${collectionIndex}`}>
+            <CardContent>
+              <CardTitle>{collection.collection}</CardTitle>
+              {collection.description && (
+                <CardDescription>{collection.description}</CardDescription>
+              )}
+              <CollectionVideosGrid>
+                {collection.videos.map((video, videoIndex) => (
+                  <div key={videoIndex}>
+                    <CollectionVideoWrapper>
+                      <iframe
+                        src={getYouTubeEmbedUrl(video.id)}
+                        title={`${collection.collection} - ${video.title}`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        loading="lazy"
+                      />
+                    </CollectionVideoWrapper>
+                    <div style={{ 
+                      marginTop: '0.5rem', 
+                      fontSize: '0.875rem', 
+                      color: '#475569',
+                      textAlign: 'center'
+                    }}>
+                      {video.title}
+                    </div>
+                  </div>
+                ))}
+              </CollectionVideosGrid>
+              <MetadataContainer>
+                {collection.location && (
+                  <MetadataItem>
+                    <MapPin />
+                    <span>
+                      <MetadataLabel>Location:</MetadataLabel>
+                      {collection.location}
+                    </span>
+                  </MetadataItem>
+                )}
+                {collection.year && (
+                  <MetadataItem>
+                    <Calendar />
+                    <span>
+                      <MetadataLabel>Year:</MetadataLabel>
+                      {collection.year}
+                    </span>
+                  </MetadataItem>
+                )}
+                {collection.appearances && collection.appearances.length > 0 && (
+                  <MetadataItem>
+                    <Users />
+                    <div>
+                      <MetadataLabel>Appearance by:</MetadataLabel>
+                      <AppearancesList>
+                        {collection.appearances.map((person, idx) => (
+                          <AppearanceTag key={idx}>{person}</AppearanceTag>
+                        ))}
+                      </AppearancesList>
+                    </div>
+                  </MetadataItem>
+                )}
+              </MetadataContainer>
+            </CardContent>
+          </CollectionCard>
+        ))}
+
+        {/* Render individual videos */}
+        {individualVideos.map((video, index) => (
           <VideoCard key={video.id || index}>
             <VideoWrapper>
               <iframe

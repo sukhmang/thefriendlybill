@@ -113,4 +113,61 @@ export const HOME_VIDEOS = [
     year: 1989,
     appearances: ["Baljit Grewal", "Varinder", "Family"],
   },
+  {
+    id: "yx1hcDolcnM", // India Visit (Chandigarh, Tinji)
+    title: "India Visit (Chandigarh, Tinji)",
+    description: "Memories from a visit to India, exploring Chandigarh and Tinji with family.",
+    location: "India",
+    year: 1992,
+    appearances: ["Baljit Grewal", "Family"],
+  },
+  {
+    id: "HiXPaLaKzjQ", // Edmonton (Avtar Tayaji Basement)
+    title: "Edmonton (Avtar Tayaji Basement)",
+    description: "Family gathering at Avtar Tayaji's basement in Edmonton, sharing moments and memories together.",
+    location: "Edmonton",
+    year: 1990,
+    appearances: ["Baljit Grewal", "Family"],
+  },
+  {
+    id: "IgGPnkykmZM", // India Trip - 1989
+    title: "India Trip - 1989",
+    description: "Memories from a trip to India in 1989, capturing family moments and experiences.",
+    location: "India",
+    year: 1989,
+    appearances: ["Baljit Grewal", "Family"],
+  },
+  {
+    id: "A7MuSPSN47I", // India Trip (1990-1992)
+    title: "India Trip (1990-1992)",
+    description: "Memories from trips to India between 1990 and 1992, capturing family moments and experiences.",
+    location: "India",
+    year: 1990,
+    appearances: ["Baljit Grewal", "Family"],
+  },
+  {
+    collection: "Vani's Birthday",
+    videos: [
+      {
+        id: "9KJndkIlb6Y",
+        title: "Part 1",
+      },
+      {
+        id: "bElj2ZCikCM",
+        title: "Part 2",
+      },
+      {
+        id: "miGIhet7m1s",
+        title: "Part 3",
+      },
+      {
+        id: "8czqIs-BD7Y",
+        title: "Part 4",
+      },
+    ],
+    description: "A collection of memories from Vani's birthday celebration, capturing special moments with family.",
+    location: "Edmonton",
+    year: 1991,
+    appearances: ["Baljit Grewal", "Vani", "Family"],
+  },
 ]
