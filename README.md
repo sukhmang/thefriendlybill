@@ -5,6 +5,7 @@ A responsive, single-page React application serving as a digital memorial for Ba
 ## Tech Stack
 
 - **React** (Vite)
+- **React Router** (Routing)
 - **Styled Components** (CSS-in-JS)
 - **Lucide React** (Icons)
 
@@ -19,7 +20,8 @@ src/
   │   ├── LivestreamCard.jsx # Video section (Slideshow & Funeral Service)
   │   ├── EventDetailsCard.jsx # Event details with collapsible past events
   │   ├── Gallery.jsx        # Photo/video gallery with infinite scroll
-  │   └── Lightbox.jsx       # Full-screen lightbox modal for gallery items
+  │   ├── Lightbox.jsx       # Full-screen lightbox modal for gallery items
+  │   └── HomeVideos.jsx     # Secret home videos page (/homevideos)
   ├── styles/
   │   ├── theme.js           # Design system theme (colors, typography, spacing)
   │   └── GlobalStyles.js    # Global CSS styles
@@ -119,6 +121,39 @@ npm run build
 - Smooth scrolling with proper offset for sticky nav
 
 ## Configuration
+
+### Home Videos
+
+The `/homevideos` route displays embedded YouTube videos in a card layout. To add videos:
+
+1. Edit `src/constants.js`
+2. Add video objects to the `HOME_VIDEOS` array:
+
+```javascript
+export const HOME_VIDEOS = [
+  {
+    id: "VIDEO_ID_HERE", // YouTube video ID from URL: youtube.com/watch?v=VIDEO_ID
+    title: "Video Title",
+    description: "Brief description of what happens in the video",
+    location: "Edmonton, Canada", // or "India", "Vancouver", etc.
+    year: 1990,
+    appearances: ["Baljit Grewal", "Family Member 1", "Family Member 2"], // Who appears in the video
+  },
+  // Add more videos...
+]
+```
+
+**Fields:**
+- `id` (required): YouTube video ID
+- `title` (required): Video title
+- `description` (optional): Brief description
+- `location` (optional): Location where video was taken
+- `year` (optional): Year the video was taken
+- `appearances` (optional): Array of people who appear in the video
+
+**Note:** This is a "secret" endpoint - it's not linked in the navigation, but accessible via direct URL.
+
+---
 
 Edit `src/constants.js` to update:
 

@@ -172,7 +172,7 @@ export default function Hero() {
   }
 
   return (
-    <Card>
+    <Card id="hero-section">
       <Content>
         <ImageWrapper>
           <Portrait
