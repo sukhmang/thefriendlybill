@@ -41,7 +41,7 @@ const Breadcrumbs = styled.div`
   color: ${props => props.theme.colors.text.secondary};
 `
 
-const BreadcrumbLink = styled(Link)`
+const BreadcrumbLink = styled.a`
   color: ${props => props.theme.colors.text.primary};
   text-decoration: none;
   font-weight: ${props => props.theme.typography.weights.semibold};
@@ -675,6 +675,17 @@ const getYouTubeThumbnailUrl = (videoId) => {
 const ACCESS_PHRASE = 'smile'
 const STORAGE_KEY = 'homevideos_authenticated'
 
+// Helper function to get main domain URL (for breadcrumb links)
+const getMainDomainUrl = () => {
+  if (typeof window === 'undefined') return '/'
+  const hostname = window.location.hostname
+  if (hostname.startsWith('homevideos.')) {
+    // On subdomain, return main domain
+    return `https://${hostname.replace('homevideos.', '')}`
+  }
+  return '/'
+}
+
 export default function HomeVideos() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
@@ -724,7 +735,7 @@ export default function HomeVideos() {
       <Container>
         <Header data-header>
           <Breadcrumbs>
-            <BreadcrumbLink to="/">Baljit Grewal Memorial Page</BreadcrumbLink>
+            <BreadcrumbLink href={getMainDomainUrl()}>Baljit Grewal Memorial Page</BreadcrumbLink>
             <BreadcrumbSeparator>›</BreadcrumbSeparator>
             <BreadcrumbCurrent>Home Videos</BreadcrumbCurrent>
           </Breadcrumbs>
@@ -901,7 +912,7 @@ export default function HomeVideos() {
         <Container>
           <Header data-header>
             <Breadcrumbs>
-              <BreadcrumbLink to="/">Baljit Grewal Memorial Page</BreadcrumbLink>
+              <BreadcrumbLink href={getMainDomainUrl()}>Baljit Grewal Memorial Page</BreadcrumbLink>
               <BreadcrumbSeparator>›</BreadcrumbSeparator>
               <BreadcrumbCurrent>Home Videos</BreadcrumbCurrent>
             </Breadcrumbs>
