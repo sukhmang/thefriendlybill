@@ -68,8 +68,8 @@ export const EVENT_DATA = {
     },
     {
       title: "Celebration of Life in Vancouver",
-      displayDate: "Saturday, February 7th, 2026",
-      displayTime: "2:00 PM - 6:00 PM PST",
+      displayDate: "Sunday, January 25th, 2026",
+      displayTime: "12:00 - 4:30 PM PST",
       venueName: "Our Home",
       address: {
         street: "20-6061 Boundary Drive West",
@@ -81,9 +81,10 @@ export const EVENT_DATA = {
       },
       note: "Open House Style - people can drop in any time and it's very casual",
       rsvp: {
-        phone: "604-123-4567",
+        phone: "604-209-4571",
         textPreferred: true,
-        note: "Text preferred"
+        note: "Text preferred",
+        name: "Varinder",
       },
       hasRSVP: true,
     }
