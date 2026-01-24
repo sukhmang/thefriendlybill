@@ -547,7 +547,7 @@ export default function EventDetailsCard() {
       <Card id="event-details">
         <Title>
           <Calendar size={28} />
-          Event Details
+          Events
         </Title>
 
         {/* Current Events - Celebration of Life */}

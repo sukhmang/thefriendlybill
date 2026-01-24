@@ -7,6 +7,11 @@ export const GlobalStyles = createGlobalStyle`
     box-sizing: border-box;
   }
 
+  html, body {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
   body {
     font-family: ${props => props.theme.typography.fontFamily};
     background-color: ${props => props.theme.colors.background};
@@ -18,6 +23,7 @@ export const GlobalStyles = createGlobalStyle`
 
   #root {
     min-height: 100vh;
+    width: 100%;
   }
 `
 

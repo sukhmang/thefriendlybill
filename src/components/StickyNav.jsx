@@ -7,6 +7,7 @@ const Nav = styled.nav`
   position: sticky;
   top: 0;
   z-index: 50;
+  width: 100%;
   background-color: ${props => props.theme.colors.cardBackground};
   box-shadow: ${props => props.theme.shadows.md};
   transition: box-shadow 0.3s ease;
@@ -60,17 +61,32 @@ const NavButton = styled.button`
   gap: 0.25rem;
   padding: 0.5rem 1rem;
   font-size: ${props => props.theme.typography.sizes.sm};
-  font-weight: ${props => props.theme.typography.weights.semibold};
+  font-weight: ${props => props.$isActive ? props.theme.typography.weights.bold : props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.text.primary};
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease;
+  position: relative;
+  transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease, font-weight 0.2s ease;
   transform: ${props => props.$portraitVisible ? 'translateX(0)' : 'translateX(0)'};
   opacity: 1;
 
   &:hover {
     color: ${props => props.theme.colors.accent};
+  }
+
+  /* Underline for active section - only when portrait is visible */
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: ${props => props.theme.colors.accent};
+    opacity: ${props => (props.$isActive && props.$portraitVisible) ? 1 : 0};
+    transition: opacity 0.3s ease;
+    border-radius: 2px 2px 0 0;
   }
 
   svg {
@@ -81,6 +97,7 @@ const NavButton = styled.button`
 
 export default function StickyNav() {
   const [showPortrait, setShowPortrait] = useState(false)
+  const [activeSection, setActiveSection] = useState('')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -104,6 +121,49 @@ export default function StickyNav() {
     return () => {
       window.removeEventListener('scroll', handleScroll)
       window.removeEventListener('resize', handleScroll)
+    }
+  }, [])
+
+  // Track active section using IntersectionObserver
+  useEffect(() => {
+    const sections = ['watch', 'event-details', 'gallery']
+    
+    const handleScroll = () => {
+      const navHeight = 100
+      let activeId = ''
+      let maxVisibility = 0
+
+      sections.forEach((id) => {
+        const el = document.getElementById(id)
+        if (!el) return
+
+        const rect = el.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        
+        // Calculate visibility in upper portion of viewport
+        const sectionTop = Math.max(rect.top, navHeight)
+        const sectionBottom = Math.min(rect.bottom, viewportHeight * 0.5)
+        const visibleHeight = Math.max(0, sectionBottom - sectionTop)
+        
+        if (rect.top < viewportHeight * 0.4 && rect.bottom > navHeight && visibleHeight > 100) {
+          const visibility = visibleHeight / Math.min(rect.height, viewportHeight * 0.4)
+          if (visibility > maxVisibility) {
+            maxVisibility = visibility
+            activeId = id
+          }
+        }
+      })
+
+      if (activeId) {
+        setActiveSection(activeId)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Initial check
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
     }
   }, [])
 
@@ -140,6 +200,7 @@ export default function StickyNav() {
             onClick={() => scrollToSection('watch')}
             aria-label="Watch"
             $portraitVisible={showPortrait}
+            $isActive={activeSection === 'watch'}
           >
             <Video />
             <span>Watch</span>
@@ -147,17 +208,19 @@ export default function StickyNav() {
           
           <NavButton
             onClick={() => scrollToSection('event-details')}
-            aria-label="Event Details"
+            aria-label="Events"
             $portraitVisible={showPortrait}
+            $isActive={activeSection === 'event-details'}
           >
             <Calendar />
-            <span>Event Details</span>
+            <span>Events</span>
           </NavButton>
           
           <NavButton
             onClick={() => scrollToSection('gallery')}
             aria-label="Gallery"
             $portraitVisible={showPortrait}
+            $isActive={activeSection === 'gallery'}
           >
             <Images />
             <span>Gallery</span>
