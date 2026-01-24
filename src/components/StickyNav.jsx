@@ -91,7 +91,7 @@ const NavButton = styled.button`
   padding: 0.5rem 0.5rem;
   font-size: ${props => props.theme.typography.sizes.sm};
   font-weight: ${props => props.$isActive ? props.theme.typography.weights.bold : props.theme.typography.weights.semibold};
-  color: ${props => props.theme.colors.text.primary};
+  color: ${props => props.$isActive ? props.theme.colors.accent : props.theme.colors.text.primary};
   background: none;
   border: none;
   cursor: pointer;
@@ -115,6 +115,7 @@ const NavButton = styled.button`
     width: 1.5rem;
     height: 1.5rem;
     flex-shrink: 0;
+    color: inherit;
   }
 
   span {
@@ -225,46 +226,113 @@ export default function StickyNav() {
     return () => window.removeEventListener('resize', handleResize)
   }, [showPortrait, activeSection])
 
-  // Track active section using IntersectionObserver
+  // Track active section based on scroll position
   useEffect(() => {
     const sections = ['watch', 'event-details', 'stories', 'gallery']
     
-    const handleScroll = () => {
+    const updateActiveSection = () => {
       const navHeight = 100
+      const viewportTop = navHeight
+      const triggerPoint = viewportTop + 150 // Point where section is considered "active"
+      
       let activeId = ''
-      let maxVisibility = 0
+      let minDistance = Infinity
 
+      // Find the section that's closest to the trigger point
       sections.forEach((id) => {
-        const el = document.getElementById(id)
-        if (!el) return
+        const element = document.getElementById(id)
+        if (!element) return
 
-        const rect = el.getBoundingClientRect()
-        const viewportHeight = window.innerHeight
+        const rect = element.getBoundingClientRect()
+        const sectionTop = rect.top
+        const sectionBottom = rect.bottom
         
-        // Calculate visibility in upper portion of viewport
-        const sectionTop = Math.max(rect.top, navHeight)
-        const sectionBottom = Math.min(rect.bottom, viewportHeight * 0.5)
-        const visibleHeight = Math.max(0, sectionBottom - sectionTop)
-        
-        if (rect.top < viewportHeight * 0.4 && rect.bottom > navHeight && visibleHeight > 100) {
-          const visibility = visibleHeight / Math.min(rect.height, viewportHeight * 0.4)
-          if (visibility > maxVisibility) {
-            maxVisibility = visibility
-            activeId = id
+        // Check if section is in the active zone (between nav and trigger point)
+        if (sectionTop <= triggerPoint && sectionBottom > viewportTop) {
+          // Section is in active zone - calculate how much is visible
+          const visibleTop = Math.max(sectionTop, viewportTop)
+          const visibleBottom = Math.min(sectionBottom, triggerPoint)
+          const visibleHeight = visibleBottom - visibleTop
+          
+          if (visibleHeight > 0) {
+            // Distance from trigger point (closer = better)
+            const distance = Math.abs(sectionTop - viewportTop)
+            if (distance < minDistance) {
+              minDistance = distance
+              activeId = id
+            }
           }
         }
       })
+
+      // If no section in active zone, find the one closest to entering it
+      if (!activeId) {
+        sections.forEach((id) => {
+          const element = document.getElementById(id)
+          if (!element) return
+          
+          const rect = element.getBoundingClientRect()
+          const sectionTop = rect.top
+          
+          // Only consider sections that are below the trigger point
+          if (sectionTop > triggerPoint) {
+            const distance = sectionTop - triggerPoint
+            if (distance < minDistance) {
+              minDistance = distance
+              activeId = id
+            }
+          }
+        })
+      }
+
+      // Fallback: if still no active section, use the first section that's visible
+      if (!activeId) {
+        sections.forEach((id) => {
+          const element = document.getElementById(id)
+          if (!element) return
+          
+          const rect = element.getBoundingClientRect()
+          if (rect.top < window.innerHeight && rect.bottom > viewportTop) {
+            if (!activeId) {
+              activeId = id
+            }
+          }
+        })
+      }
 
       if (activeId) {
         setActiveSection(activeId)
       }
     }
 
+    // Update on scroll
+    const handleScroll = () => {
+      updateActiveSection()
+    }
+
+    // Update on scroll end (for smooth scrolling after click)
+    let scrollTimeout
+    const handleScrollEnd = () => {
+      clearTimeout(scrollTimeout)
+      scrollTimeout = setTimeout(() => {
+        updateActiveSection()
+      }, 100)
+    }
+
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll() // Initial check
+    window.addEventListener('scroll', handleScrollEnd, { passive: true })
+    
+    // Initial check
+    updateActiveSection()
+    
+    // Also check periodically to catch any missed updates
+    const interval = setInterval(updateActiveSection, 200)
 
     return () => {
       window.removeEventListener('scroll', handleScroll)
+      window.removeEventListener('scroll', handleScrollEnd)
+      clearInterval(interval)
+      clearTimeout(scrollTimeout)
     }
   }, [])
 
