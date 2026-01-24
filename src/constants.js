@@ -146,6 +146,22 @@ export const HOME_VIDEOS = [
     appearances: ["Baljit Grewal", "Family"],
   },
   {
+    id: "wVAQycdeh3I", // Memories of Papaji (Last days and Hospital Visit)
+    title: "Memories of Papaji (Last days and Hospital Visit)",
+    description: "Memories of Papaji during his last days and hospital visit, capturing precious family moments.",
+    location: "Vancouver",
+    year: 2003,
+    appearances: ["Baljit Grewal", "Family"],
+  },
+  {
+    id: "tksj-AwWsxw", // Renu & Baljit Marriage
+    title: "Renu & Baljit Marriage",
+    description: "Celebrating the marriage of Renu and Baljit, a special day filled with joy, tradition, and family.",
+    location: "India",
+    year: 1980,
+    appearances: ["Baljit Grewal", "Renu", "Family"],
+  },
+  {
     collection: "Vani's Birthday",
     videos: [
       {
