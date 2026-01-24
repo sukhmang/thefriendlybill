@@ -358,20 +358,9 @@ const renderEventDetails = (event, isMain = false, onShowProgram = null) => {
   }
 
   return (
-    <EventSection key={event.name || 'main'}>
+    <EventSection key={event.title || event.name || 'main'}>
       <EventTitle>
-        {event.note && !isMain && (
-          <span style={{ 
-            fontSize: '0.875rem', 
-            fontWeight: 'normal', 
-            color: '#475569',
-            display: 'block',
-            marginBottom: '0.25rem'
-          }}>
-            {event.note}
-          </span>
-        )}
-        {event.name}
+        {event.title || event.name || (isMain ? 'Funeral Service' : 'Event')}
         {event.rsvp && <RSVPBadge>RSVP Event</RSVPBadge>}
         {event.isPast && <PastEventLabel>Past Event</PastEventLabel>}
       </EventTitle>
@@ -383,7 +372,7 @@ const renderEventDetails = (event, isMain = false, onShowProgram = null) => {
           </IconWrapper>
           <DetailContent>
             <DetailLabel>Date</DetailLabel>
-            <DetailValue>{event.date || EVENT_DATA.displayDate}</DetailValue>
+            <DetailValue>{event.displayDate || event.date || EVENT_DATA.displayDate}</DetailValue>
           </DetailContent>
         </DetailItem>
 
@@ -393,7 +382,7 @@ const renderEventDetails = (event, isMain = false, onShowProgram = null) => {
           </IconWrapper>
           <DetailContent>
             <DetailLabel>Time</DetailLabel>
-            <DetailValue>{event.time || EVENT_DATA.displayTime}</DetailValue>
+            <DetailValue>{event.displayTime || event.time || EVENT_DATA.displayTime}</DetailValue>
           </DetailContent>
         </DetailItem>
 
@@ -409,7 +398,7 @@ const renderEventDetails = (event, isMain = false, onShowProgram = null) => {
                   <strong>{event.venueName}</strong>
                   {event.note && event.note.includes('Open House') && (
                     <BadgeContainer>
-                      <Badge>{event.note}</Badge>
+                      <Badge>Open House Style</Badge>
                       <Tooltip>
                         People can drop in any time and it's very casual
                       </Tooltip>
