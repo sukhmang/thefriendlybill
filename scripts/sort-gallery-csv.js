@@ -4,8 +4,8 @@
  * Gallery CSV Sorter Script
  * 
  * Sorts gallery.csv entries with video priority:
- * - Videos are assigned to positions 1-120 (first 120 items)
- * - Images are assigned to positions 121+ (after videos)
+ * - Videos are assigned to positions 1-150 (first 150 items)
+ * - Images are assigned to positions 151+ (after videos)
  * - Preserves existing sort order within each group if possible
  * - Can be run anytime to re-sort the gallery
  * 
@@ -22,7 +22,7 @@ const __dirname = path.dirname(__filename);
 
 const GALLERY_CSV = path.join(__dirname, '..', 'public', 'gallery.csv');
 
-const VIDEO_PRIORITY_RANGE = 120; // Videos appear in first 120 positions
+const VIDEO_PRIORITY_RANGE = 150; // Videos appear in first 150 positions
 
 // Parse CSV line (handles quoted fields)
 function parseCSVLine(line) {
@@ -145,12 +145,12 @@ function sortGalleryCSV() {
     
     console.log(`📊 Found ${videos.length} video(s) and ${images.length} image(s)\n`);
 
-    // Strategy: Mix videos and images in first 120 positions
-    // 1. Assign videos to random positions within 1-120
-    // 2. Fill remaining positions 1-120 with images
-    // 3. Assign remaining images to positions 121+
+    // Strategy: Mix videos and images in first 150 positions
+    // 1. Assign videos to random positions within 1-150
+    // 2. Fill remaining positions 1-150 with images
+    // 3. Assign remaining images to positions 151+
     
-    // Step 1: Assign videos to random positions within 1-120
+    // Step 1: Assign videos to random positions within 1-150
     const videoSortValues = Array.from({ length: VIDEO_PRIORITY_RANGE }, (_, i) => i + 1);
     const shuffledVideoSortValues = shuffle([...videoSortValues]);
     
@@ -163,7 +163,7 @@ function sortGalleryCSV() {
         video.default_sort = position.toString();
         takenPositions.add(position);
       } else {
-        // If more than 120 videos, assign to positions 121+
+        // If more than 150 videos, assign to positions 151+
         video.default_sort = (VIDEO_PRIORITY_RANGE + 1 + (index - VIDEO_PRIORITY_RANGE)).toString();
       }
     });
@@ -182,16 +182,16 @@ function sortGalleryCSV() {
     const imageEndSort = 10000;
     const imageRange = imageEndSort - imageStartSort + 1;
     
-    // Split images: some go to 1-120, rest go to 121+
+    // Split images: some go to 1-150, rest go to 151+
     const imagesForFirst120 = Math.min(images.length, availablePositions.length);
     const imagesForAfter120 = images.length - imagesForFirst120;
     
-    // Assign images to positions 1-120
+    // Assign images to positions 1-150
     for (let i = 0; i < imagesForFirst120; i++) {
       images[i].default_sort = shuffledAvailablePositions[i].toString();
     }
     
-    // Assign remaining images to positions 121+
+    // Assign remaining images to positions 151+
     if (imagesForAfter120 > 0) {
       const imageSortValues = [];
       const step = imageRange / imagesForAfter120;
