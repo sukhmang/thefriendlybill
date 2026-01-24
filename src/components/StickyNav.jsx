@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
 import { Video, Calendar, BookOpen, Images } from 'lucide-react'
 import { MEMORIAL_DATA } from '../constants'
@@ -59,6 +59,20 @@ const NavItems = styled.div`
   min-width: 0;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
+`
+
+const ActiveIndicator = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: ${props => props.$left}px;
+  width: ${props => props.$width}px;
+  height: 3px;
+  background-color: ${props => props.theme.colors.accent};
+  border-radius: 2px 2px 0 0;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: ${props => props.$visible ? 1 : 0};
+  pointer-events: none;
 `
 
 const Portrait = styled.img`
@@ -98,19 +112,6 @@ const NavButton = styled.button`
     color: ${props => props.theme.colors.accent};
   }
 
-  /* Underline for active section - only when portrait is visible */
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0.5rem;
-    right: 0.5rem;
-    height: 3px;
-    background-color: ${props => props.theme.colors.accent};
-    opacity: ${props => props.$isActive && props.$portraitVisible ? 1 : 0};
-    transition: opacity 0.3s ease;
-    border-radius: 2px 2px 0 0;
-  }
 
   svg {
     width: 1.5rem;
@@ -129,6 +130,18 @@ const NavButton = styled.button`
 export default function StickyNav() {
   const [showPortrait, setShowPortrait] = useState(false)
   const [activeSection, setActiveSection] = useState('')
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+  const watchButtonRef = useRef(null)
+  const eventDetailsButtonRef = useRef(null)
+  const storiesButtonRef = useRef(null)
+  const galleryButtonRef = useRef(null)
+  
+  const buttonRefs = {
+    watch: watchButtonRef,
+    'event-details': eventDetailsButtonRef,
+    stories: storiesButtonRef,
+    gallery: galleryButtonRef,
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -154,6 +167,65 @@ export default function StickyNav() {
       window.removeEventListener('resize', handleScroll)
     }
   }, [])
+
+  // Update indicator position when active section changes or portrait visibility changes
+  useEffect(() => {
+    if (!activeSection || !showPortrait) {
+      setIndicatorStyle({ left: 0, width: 0 })
+      return
+    }
+
+    const calculatePosition = () => {
+      const button = buttonRefs[activeSection]?.current
+      if (!button) return
+
+      const navItems = button.closest('[data-nav-items]')
+      if (!navItems) return
+
+      // Calculate position relative to navItems
+      const navItemsRect = navItems.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      
+      // Calculate left position relative to navItems
+      const left = buttonRect.left - navItemsRect.left
+      const width = buttonRect.width
+      
+      setIndicatorStyle({ left, width })
+    }
+
+    // Use double requestAnimationFrame to ensure DOM has fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Small additional delay to ensure all transitions are complete
+        setTimeout(() => {
+          calculatePosition()
+        }, 50)
+      })
+    })
+  }, [activeSection, showPortrait])
+
+  // Recalculate on window resize
+  useEffect(() => {
+    if (!showPortrait || !activeSection) return
+
+    const handleResize = () => {
+      const button = buttonRefs[activeSection]?.current
+      if (!button) return
+
+      const navItems = button.closest('[data-nav-items]')
+      if (!navItems) return
+
+      const navItemsRect = navItems.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      const left = buttonRect.left - navItemsRect.left
+      const width = buttonRect.width
+      
+      setIndicatorStyle({ left, width })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [showPortrait, activeSection])
 
   // Track active section using IntersectionObserver
   useEffect(() => {
@@ -227,8 +299,17 @@ export default function StickyNav() {
             />
           </PortraitWrapper>
           
-          <NavItems>
+          <NavItems data-nav-items>
+            {activeSection && showPortrait && (
+              <ActiveIndicator 
+                $left={indicatorStyle.left} 
+                $width={indicatorStyle.width}
+                $visible={true}
+              />
+            )}
+            
             <NavButton
+              ref={watchButtonRef}
               onClick={() => scrollToSection('watch')}
               aria-label="Watch"
               $portraitVisible={showPortrait}
@@ -239,6 +320,7 @@ export default function StickyNav() {
             </NavButton>
             
             <NavButton
+              ref={eventDetailsButtonRef}
               onClick={() => scrollToSection('event-details')}
               aria-label="Events"
               $portraitVisible={showPortrait}
@@ -249,6 +331,7 @@ export default function StickyNav() {
             </NavButton>
             
             <NavButton
+              ref={storiesButtonRef}
               onClick={() => scrollToSection('stories')}
               aria-label="Stories"
               $portraitVisible={showPortrait}
@@ -259,6 +342,7 @@ export default function StickyNav() {
             </NavButton>
             
             <NavButton
+              ref={galleryButtonRef}
               onClick={() => scrollToSection('gallery')}
               aria-label="Gallery"
               $portraitVisible={showPortrait}

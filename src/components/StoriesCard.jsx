@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
-import { BookOpen, Mail, ChevronDown } from 'lucide-react'
+import { BookOpen } from 'lucide-react'
 
 const Card = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
@@ -20,17 +19,9 @@ const Title = styled.h2`
   gap: 0.75rem;
 `
 
-const SubmitBadge = styled.div`
-  display: inline-flex;
-  align-items: center;
-  position: relative;
-  margin-left: 0.5rem;
-`
-
 const SubmitButton = styled.button`
   display: inline-flex;
   align-items: center;
-  gap: 0.375rem;
   padding: 0.375rem 0.75rem;
   background-color: ${props => props.theme.colors.accent}15;
   border: 1px solid ${props => props.theme.colors.accent}40;
@@ -40,62 +31,11 @@ const SubmitButton = styled.button`
   color: ${props => props.theme.colors.accent};
   cursor: pointer;
   transition: all 0.2s ease;
+  margin-left: 0.5rem;
 
   &:hover {
     background-color: ${props => props.theme.colors.accent}25;
     border-color: ${props => props.theme.colors.accent}60;
-  }
-
-  svg {
-    width: 0.875rem;
-    height: 0.875rem;
-    transition: transform 0.2s ease;
-  }
-
-  svg:last-child {
-    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
-  }
-`
-
-const Dropdown = styled.div`
-  position: absolute;
-  top: calc(100% + 0.5rem);
-  left: 0;
-  background-color: ${props => props.theme.colors.cardBackground};
-  border: 1px solid ${props => props.theme.colors.border};
-  border-radius: ${props => props.theme.borderRadius.md};
-  box-shadow: ${props => props.theme.shadows.lg};
-  min-width: 200px;
-  z-index: 100;
-  opacity: ${props => props.$isOpen ? 1 : 0};
-  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
-  transform: ${props => props.$isOpen ? 'translateY(0)' : 'translateY(-10px)'};
-  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
-`
-
-const DropdownItem = styled.a`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  color: ${props => props.theme.colors.text.primary};
-  text-decoration: none;
-  font-size: ${props => props.theme.typography.sizes.sm};
-  transition: background-color 0.2s ease;
-  border-bottom: 1px solid ${props => props.theme.colors.border};
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:hover {
-    background-color: ${props => props.theme.colors.background};
-  }
-
-  svg {
-    width: 1rem;
-    height: 1rem;
-    color: ${props => props.theme.colors.text.secondary};
   }
 `
 
@@ -121,29 +61,10 @@ const Content = styled.div`
 `
 
 export default function StoriesCard() {
-  const [submitDropdownOpen, setSubmitDropdownOpen] = useState(false)
-  const submitDropdownRef = useRef(null)
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (submitDropdownRef.current && !submitDropdownRef.current.contains(event.target)) {
-        setSubmitDropdownOpen(false)
-      }
-    }
-
-    if (submitDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [submitDropdownOpen])
-
   const handleEmailSubmit = () => {
-    window.location.href = 'mailto:billgrewalpics@gmail.com?subject=Story Submission for Baljit Grewal Memorial'
-    setSubmitDropdownOpen(false)
+    const subject = encodeURIComponent('My favorite story about Bill Grewal')
+    const body = encodeURIComponent('I am ______ and i know Bill in the following way: ______')
+    window.location.href = `mailto:billgrewalpics@gmail.com?subject=${subject}&body=${body}`
   }
 
   return (
@@ -152,28 +73,12 @@ export default function StoriesCard() {
         <BookOpen size={28} />
         Stories
         <ComingSoonBadge>Coming soon</ComingSoonBadge>
-        <SubmitBadge ref={submitDropdownRef}>
-          <SubmitButton
-            onClick={() => setSubmitDropdownOpen(!submitDropdownOpen)}
-            $isOpen={submitDropdownOpen}
-            aria-label="Submit your story"
-          >
-            Submit your story!
-            <ChevronDown size={14} />
-          </SubmitButton>
-          <Dropdown $isOpen={submitDropdownOpen}>
-            <DropdownItem
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                handleEmailSubmit()
-              }}
-            >
-              <Mail size={16} />
-              Email Us
-            </DropdownItem>
-          </Dropdown>
-        </SubmitBadge>
+        <SubmitButton
+          onClick={handleEmailSubmit}
+          aria-label="Submit your story"
+        >
+          Submit your story!
+        </SubmitButton>
       </Title>
       <Content>
         Share your memories and stories about Baljit Singh Grewal. Stories will be displayed here soon.

@@ -7,6 +7,7 @@ import Hero from './components/Hero'
 import StickyNav from './components/StickyNav'
 import LivestreamCard from './components/LivestreamCard'
 import EventDetailsCard from './components/EventDetailsCard'
+import StoriesCard from './components/StoriesCard'
 import Gallery from './components/Gallery'
 import HomeVideos from './components/HomeVideos'
 
@@ -18,6 +19,7 @@ function MemorialPage() {
         <Hero />
         <LivestreamCard />
         <EventDetailsCard />
+        <StoriesCard />
         <Gallery />
       </Layout>
     </>
