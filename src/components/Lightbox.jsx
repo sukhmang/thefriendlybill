@@ -85,9 +85,11 @@ const NavButton = styled.button`
   justify-content: center;
   cursor: pointer;
   color: white;
-  transition: all 0.2s ease;
+  transition: opacity 0.3s ease, transform 0.2s ease;
   z-index: 1001;
   backdrop-filter: blur(10px);
+  opacity: ${props => props.$visible ? 1 : 0};
+  pointer-events: ${props => props.$visible ? 'auto' : 'none'};
 
   &:hover {
     background: rgba(255, 255, 255, 0.25);
@@ -99,7 +101,7 @@ const NavButton = styled.button`
   }
 
   &:disabled {
-    opacity: 0.3;
+    opacity: ${props => props.$visible ? 0.3 : 0};
     cursor: not-allowed;
   }
 
@@ -237,7 +239,9 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
   const [swipeStart, setSwipeStart] = useState(null)
   const [swipeOffset, setSwipeOffset] = useState(0)
   const [isSwiping, setIsSwiping] = useState(false)
+  const [showNavButtons, setShowNavButtons] = useState(false)
   const containerRef = useRef(null)
+  const hideTimeoutRef = useRef(null)
 
   // Keyboard navigation
   useEffect(() => {
@@ -315,6 +319,47 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
     setSwipeStart(null)
   }
 
+  // Show/hide navigation buttons on mouse movement
+  const handleMouseMove = (e) => {
+    // Show buttons when mouse moves
+    setShowNavButtons(true)
+
+    // Clear existing timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+    }
+
+    // Hide buttons after 1 second of inactivity
+    hideTimeoutRef.current = setTimeout(() => {
+      setShowNavButtons(false)
+    }, 1000)
+
+    // Also handle swipe detection if swiping
+    if (swipeStart && isSwiping) {
+      const deltaX = e.clientX - swipeStart.x
+      const deltaY = e.clientY - swipeStart.y
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        setSwipeOffset(deltaX)
+      }
+    }
+  }
+
+  const handleMouseEnter = () => {
+    setShowNavButtons(true)
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    // Hide immediately when mouse leaves
+    setShowNavButtons(false)
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current)
+    }
+  }
+
   // Mouse drag support (for desktop)
   const handleMouseDown = (e) => {
     if (e.button !== 0) return // Only left mouse button
@@ -324,17 +369,6 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
       time: Date.now()
     })
     setIsSwiping(true)
-  }
-
-  const handleMouseMove = (e) => {
-    if (!swipeStart || !isSwiping) return
-
-    const deltaX = e.clientX - swipeStart.x
-    const deltaY = e.clientY - swipeStart.y
-
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      setSwipeOffset(deltaX)
-    }
   }
 
   const handleMouseUp = (e) => {
@@ -367,6 +401,9 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
     document.body.style.overflow = 'hidden'
     return () => {
       document.body.style.overflow = 'unset'
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
     }
   }, [])
 
@@ -375,7 +412,6 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
   return (
     <Overlay 
       onClick={onClose}
-      onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
     >
@@ -388,6 +424,9 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <CloseButton onClick={onClose} aria-label="Close lightbox">
           <X />
@@ -395,6 +434,7 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
 
         <NavButton
           $position="left"
+          $visible={showNavButtons}
           onClick={(e) => {
             e.stopPropagation()
             onPrevious()
@@ -407,6 +447,7 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
 
         <NavButton
           $position="right"
+          $visible={showNavButtons}
           onClick={(e) => {
             e.stopPropagation()
             onNext()
