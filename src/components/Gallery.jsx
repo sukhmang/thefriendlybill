@@ -3,6 +3,47 @@ import styled from 'styled-components'
 import { Images, Play, Image, Video, Mail, MessageCircle, ChevronDown } from 'lucide-react'
 import Lightbox from './Lightbox'
 
+// Utility function to generate optimized Cloudinary URLs
+const getOptimizedCloudinaryUrl = (url, type = 'grid') => {
+  if (!url || !url.includes('cloudinary.com')) {
+    return url
+  }
+
+  // Split the URL to insert transformations
+  const parts = url.split('/upload/')
+  if (parts.length !== 2) return url
+
+  const baseUrl = parts[0] + '/upload/'
+  const fileId = parts[1]
+
+  // For video grid view: optimized for mobile (480px width, economy quality, no audio)
+  if (type === 'video-grid') {
+    // w_480: Cap width at 480px (plenty for mobile grid)
+    // q_auto:eco: Aggressive compression (saves HUGE data, looks fine on small screens)
+    // f_auto: Use modern codecs (AV1/H.265) which are 30% smaller
+    // ac_none: Remove audio track since videos autoplay muted (saves ~10% more)
+    return `${baseUrl}w_480,q_auto:eco,f_auto,ac_none/${fileId}`
+  }
+
+  // For video thumbnail/poster: Generate a static JPG frame
+  if (type === 'video-thumbnail') {
+    // Generate a JPG thumbnail from the video (first frame)
+    // w_400: width 400px, h_400: height 400px, c_fill: fill crop
+    // f_jpg: format JPG, q_auto: auto quality
+    return `${baseUrl}w_400,h_400,c_fill,f_jpg,q_auto/${fileId}`
+  }
+
+  // For lightbox: Full quality (but still optimized)
+  if (type === 'video-lightbox') {
+    // q_auto: Auto quality (high quality but still optimized)
+    // f_auto: Modern codecs
+    return `${baseUrl}q_auto,f_auto/${fileId}`
+  }
+
+  // Default: return original
+  return url
+}
+
 const Card = styled.div`
   background-color: ${props => props.theme.colors.cardBackground};
   border-radius: ${props => props.theme.borderRadius.md};
@@ -377,8 +418,10 @@ function LazyImage({ src, alt, thumbnail, onLoad }) {
 }
 
 // Lazy loaded video component for grid view (muted, looped, autoplay)
-function LazyVideo({ src, alt }) {
+// Uses optimized video URL for grid view to save data
+function LazyVideo({ src, gridUrl, thumbnail, alt }) {
   const [inView, setInView] = useState(false)
+  const [isPlaying, setIsPlaying] = useState(false)
   const videoRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -386,14 +429,26 @@ function LazyVideo({ src, alt }) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setInView(true)
-            observer.disconnect()
+          const nowInView = entry.isIntersecting
+          
+          setInView(nowInView)
+          
+          // Pause video when it goes out of view, play when in view
+          if (videoRef.current) {
+            if (nowInView && !isPlaying) {
+              videoRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(err => console.log('Video autoplay prevented:', err))
+            } else if (!nowInView && isPlaying) {
+              videoRef.current.pause()
+              setIsPlaying(false)
+            }
           }
         })
       },
       {
         rootMargin: '50px',
+        threshold: 0.5 // Trigger when 50% visible
       }
     )
 
@@ -406,24 +461,27 @@ function LazyVideo({ src, alt }) {
         observer.disconnect()
       }
     }
-  }, [])
+  }, [isPlaying])
 
-  useEffect(() => {
-    if (inView && videoRef.current) {
-      // Try to play the video (muted, looped, autoplay)
-      videoRef.current.play().catch(err => {
-        console.log('Video autoplay prevented:', err)
-      })
-    }
-  }, [inView])
+
+  // Use optimized grid URL if available, otherwise fall back to original
+  const videoSrc = gridUrl || src
 
   return (
     <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
-      {!inView && <Placeholder />}
+      {!inView && thumbnail && (
+        <MediaThumbnail
+          src={thumbnail}
+          alt={alt}
+          $loaded={true}
+        />
+      )}
+      {!inView && !thumbnail && <Placeholder />}
       {inView && (
         <MediaVideo
           ref={videoRef}
-          src={src}
+          src={videoSrc}
+          poster={thumbnail} // Show thumbnail while loading
           muted
           loop
           playsInline
@@ -514,7 +572,7 @@ export default function Gallery() {
           const isVideo = lowerFilename.match(/\.(mp4|webm|mov)$/i) || 
                          (isUrl && url.includes('/video/upload/'))
           
-          // Generate thumbnail path for images
+          // Generate thumbnail and optimized URLs
           if (isUrl && !isVideo && !isGif && url.includes('/image/upload/')) {
             // For Cloudinary images, generate thumbnail URL with transformation
             // w_400 = width 400px, c_fill = fill crop, f_jpg = format JPG, q_auto = auto quality
@@ -523,8 +581,23 @@ export default function Gallery() {
             // For local images, use thumbnail (always .jpg, regardless of original format)
             const baseName = filename.replace(/\.[^/.]+$/, '')
             thumbnail = `/images/thumbnails/${baseName}.jpg`
+          } else if (isVideo && isUrl && url.includes('/video/upload/')) {
+            // For Cloudinary videos:
+            // - thumbnail: Generate a static JPG frame from the video
+            // - gridUrl: Optimized video for grid view (smaller file size)
+            // - lightboxUrl: Full quality for lightbox
+            thumbnail = getOptimizedCloudinaryUrl(url, 'video-thumbnail')
+            // Store both optimized and full quality URLs
+            return {
+              filename,
+              url: getOptimizedCloudinaryUrl(url, 'video-lightbox'), // Full quality for lightbox
+              gridUrl: getOptimizedCloudinaryUrl(url, 'video-grid'), // Optimized for grid
+              thumbnail,
+              type: 'video',
+              alt: filename.replace(/\.[^/.]+$/, '')
+            }
           } else {
-            // For videos/GIFs, use the file itself
+            // For local videos/GIFs, use the file itself
             thumbnail = url
           }
           
@@ -755,6 +828,8 @@ export default function Gallery() {
               {item.type === 'video' ? (
                 <LazyVideo
                   src={item.url}
+                  gridUrl={item.gridUrl}
+                  thumbnail={item.thumbnail}
                   alt={item.alt || item.filename}
                 />
               ) : item.type === 'gif' ? (
