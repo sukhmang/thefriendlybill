@@ -1,47 +1,78 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import styled from 'styled-components'
-import { Video, Calendar, Images } from 'lucide-react'
+import { Video, Calendar, BookOpen, Images } from 'lucide-react'
 import { MEMORIAL_DATA } from '../constants'
 
 const Nav = styled.nav`
   position: sticky;
   top: 0;
   z-index: 50;
+  width: 100%;
+  max-width: 100vw;
   background-color: ${props => props.theme.colors.cardBackground};
   box-shadow: ${props => props.theme.shadows.md};
   transition: box-shadow 0.3s ease;
+  box-sizing: border-box;
+  overflow: hidden;
 `
 
 const NavContainer = styled.div`
   margin: 0 auto;
-  max-width: 600px;
+  max-width: min(600px, 100vw);
   width: 100%;
   padding: 0 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
 `
 
 const NavContent = styled.div`
   display: flex;
-  justify-content: space-around;
   align-items: center;
   padding: 1rem 0;
-  gap: 0.5rem;
-  position: relative;
-  transition: padding-left 0.3s ease;
-  padding-left: ${props => props.$portraitVisible ? '4.5rem' : '0'};
+  gap: 0;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 `
 
 const PortraitWrapper = styled.div`
-  position: absolute;
-  left: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: ${props => props.$show ? '4.5rem' : '0'};
+  padding-left: ${props => props.$show ? '1rem' : '0'};
   opacity: ${props => props.$show ? 1 : 0};
   transform: ${props => props.$show ? 'translateX(0)' : 'translateX(-20px)'};
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, padding-left 0.3s ease;
   pointer-events: ${props => props.$show ? 'auto' : 'none'};
-  width: ${props => props.$show ? '3rem' : '0'};
   overflow: hidden;
-  z-index: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+`
+
+const NavItems = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex: 1;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+  position: relative;
+`
+
+const ActiveIndicator = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: ${props => props.$left}px;
+  width: ${props => props.$width}px;
+  height: 3px;
+  background-color: ${props => props.theme.colors.accent};
+  border-radius: 2px 2px 0 0;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: ${props => props.$visible ? 1 : 0};
+  pointer-events: none;
 `
 
 const Portrait = styled.img`
@@ -58,29 +89,59 @@ const NavButton = styled.button`
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem;
   font-size: ${props => props.theme.typography.sizes.sm};
-  font-weight: ${props => props.theme.typography.weights.semibold};
+  font-weight: ${props => props.$isActive ? props.theme.typography.weights.bold : props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.text.primary};
   background: none;
   border: none;
   cursor: pointer;
-  transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease;
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease, font-weight 0.2s ease;
   transform: ${props => props.$portraitVisible ? 'translateX(0)' : 'translateX(0)'};
   opacity: 1;
+
+  @media (min-width: 640px) {
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     color: ${props => props.theme.colors.accent};
   }
 
+
   svg {
     width: 1.5rem;
     height: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 `
 
 export default function StickyNav() {
   const [showPortrait, setShowPortrait] = useState(false)
+  const [activeSection, setActiveSection] = useState('')
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+  const watchButtonRef = useRef(null)
+  const eventDetailsButtonRef = useRef(null)
+  const storiesButtonRef = useRef(null)
+  const galleryButtonRef = useRef(null)
+  
+  const buttonRefs = {
+    watch: watchButtonRef,
+    'event-details': eventDetailsButtonRef,
+    stories: storiesButtonRef,
+    gallery: galleryButtonRef,
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -107,6 +168,108 @@ export default function StickyNav() {
     }
   }, [])
 
+  // Update indicator position when active section changes or portrait visibility changes
+  useEffect(() => {
+    if (!activeSection || !showPortrait) {
+      setIndicatorStyle({ left: 0, width: 0 })
+      return
+    }
+
+    const calculatePosition = () => {
+      const button = buttonRefs[activeSection]?.current
+      if (!button) return
+
+      const navItems = button.closest('[data-nav-items]')
+      if (!navItems) return
+
+      // Calculate position relative to navItems
+      const navItemsRect = navItems.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      
+      // Calculate left position relative to navItems
+      const left = buttonRect.left - navItemsRect.left
+      const width = buttonRect.width
+      
+      setIndicatorStyle({ left, width })
+    }
+
+    // Use double requestAnimationFrame to ensure DOM has fully updated
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        // Small additional delay to ensure all transitions are complete
+        setTimeout(() => {
+          calculatePosition()
+        }, 50)
+      })
+    })
+  }, [activeSection, showPortrait])
+
+  // Recalculate on window resize
+  useEffect(() => {
+    if (!showPortrait || !activeSection) return
+
+    const handleResize = () => {
+      const button = buttonRefs[activeSection]?.current
+      if (!button) return
+
+      const navItems = button.closest('[data-nav-items]')
+      if (!navItems) return
+
+      const navItemsRect = navItems.getBoundingClientRect()
+      const buttonRect = button.getBoundingClientRect()
+      const left = buttonRect.left - navItemsRect.left
+      const width = buttonRect.width
+      
+      setIndicatorStyle({ left, width })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [showPortrait, activeSection])
+
+  // Track active section using IntersectionObserver
+  useEffect(() => {
+    const sections = ['watch', 'event-details', 'stories', 'gallery']
+    
+    const handleScroll = () => {
+      const navHeight = 100
+      let activeId = ''
+      let maxVisibility = 0
+
+      sections.forEach((id) => {
+        const el = document.getElementById(id)
+        if (!el) return
+
+        const rect = el.getBoundingClientRect()
+        const viewportHeight = window.innerHeight
+        
+        // Calculate visibility in upper portion of viewport
+        const sectionTop = Math.max(rect.top, navHeight)
+        const sectionBottom = Math.min(rect.bottom, viewportHeight * 0.5)
+        const visibleHeight = Math.max(0, sectionBottom - sectionTop)
+        
+        if (rect.top < viewportHeight * 0.4 && rect.bottom > navHeight && visibleHeight > 100) {
+          const visibility = visibleHeight / Math.min(rect.height, viewportHeight * 0.4)
+          if (visibility > maxVisibility) {
+            maxVisibility = visibility
+            activeId = id
+          }
+        }
+      })
+
+      if (activeId) {
+        setActiveSection(activeId)
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    handleScroll() // Initial check
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
   const scrollToSection = (sectionId) => {
     const element = document.getElementById(sectionId)
     if (element) {
@@ -128,7 +291,7 @@ export default function StickyNav() {
   return (
     <Nav>
       <NavContainer>
-        <NavContent $portraitVisible={showPortrait}>
+        <NavContent>
           <PortraitWrapper $show={showPortrait}>
             <Portrait 
               src={MEMORIAL_DATA.portraitImage} 
@@ -136,32 +299,59 @@ export default function StickyNav() {
             />
           </PortraitWrapper>
           
-          <NavButton
-            onClick={() => scrollToSection('watch')}
-            aria-label="Watch"
-            $portraitVisible={showPortrait}
-          >
-            <Video />
-            <span>Watch</span>
-          </NavButton>
-          
-          <NavButton
-            onClick={() => scrollToSection('event-details')}
-            aria-label="Event Details"
-            $portraitVisible={showPortrait}
-          >
-            <Calendar />
-            <span>Event Details</span>
-          </NavButton>
-          
-          <NavButton
-            onClick={() => scrollToSection('gallery')}
-            aria-label="Gallery"
-            $portraitVisible={showPortrait}
-          >
-            <Images />
-            <span>Gallery</span>
-          </NavButton>
+          <NavItems data-nav-items>
+            {activeSection && showPortrait && (
+              <ActiveIndicator 
+                $left={indicatorStyle.left} 
+                $width={indicatorStyle.width}
+                $visible={true}
+              />
+            )}
+            
+            <NavButton
+              ref={watchButtonRef}
+              onClick={() => scrollToSection('watch')}
+              aria-label="Watch"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'watch'}
+            >
+              <Video />
+              <span>Watch</span>
+            </NavButton>
+            
+            <NavButton
+              ref={eventDetailsButtonRef}
+              onClick={() => scrollToSection('event-details')}
+              aria-label="Events"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'event-details'}
+            >
+              <Calendar />
+              <span>Events</span>
+            </NavButton>
+            
+            <NavButton
+              ref={storiesButtonRef}
+              onClick={() => scrollToSection('stories')}
+              aria-label="Stories"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'stories'}
+            >
+              <BookOpen />
+              <span>Stories</span>
+            </NavButton>
+            
+            <NavButton
+              ref={galleryButtonRef}
+              onClick={() => scrollToSection('gallery')}
+              aria-label="Gallery"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'gallery'}
+            >
+              <Images />
+              <span>Gallery</span>
+            </NavButton>
+          </NavItems>
         </NavContent>
       </NavContainer>
     </Nav>

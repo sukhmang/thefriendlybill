@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
 import styled from 'styled-components'
-import { Images, Play, Image, Video } from 'lucide-react'
+import { Images, Play, Image, Video, Mail, MessageCircle, ChevronDown } from 'lucide-react'
 import Lightbox from './Lightbox'
 
 const Card = styled.div`
@@ -24,11 +24,11 @@ const Title = styled.h2`
 const Grid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  gap: 0.5rem;
 
   @media (min-width: 768px) {
     grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
+    gap: 0.75rem;
   }
 `
 
@@ -160,9 +160,17 @@ const LoadMoreTrigger = styled.div`
   justify-content: center;
 `
 
-const Badge = styled.div`
+const SubmitBadge = styled.div`
   display: inline-flex;
   align-items: center;
+  position: relative;
+  margin-left: 0.5rem;
+`
+
+const SubmitButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
   padding: 0.375rem 0.75rem;
   background-color: ${props => props.theme.colors.accent}15;
   border: 1px solid ${props => props.theme.colors.accent}40;
@@ -170,21 +178,81 @@ const Badge = styled.div`
   font-size: ${props => props.theme.typography.sizes.xs};
   font-weight: ${props => props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.accent};
-  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: ${props => props.theme.colors.accent}25;
+    border-color: ${props => props.theme.colors.accent}60;
+  }
+
+  svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    transition: transform 0.2s ease;
+  }
+
+  svg:last-child {
+    transform: ${props => props.$isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};
+  }
+`
+
+const Dropdown = styled.div`
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 0;
+  background-color: ${props => props.theme.colors.cardBackground};
+  border: 1px solid ${props => props.theme.colors.border};
+  border-radius: ${props => props.theme.borderRadius.md};
+  box-shadow: ${props => props.theme.shadows.lg};
+  min-width: 200px;
+  z-index: 100;
+  opacity: ${props => props.$isOpen ? 1 : 0};
+  visibility: ${props => props.$isOpen ? 'visible' : 'hidden'};
+  transform: ${props => props.$isOpen ? 'translateY(0)' : 'translateY(-10px)'};
+  transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
+`
+
+const DropdownItem = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: ${props => props.theme.colors.text.primary};
+  text-decoration: none;
+  font-size: ${props => props.theme.typography.sizes.sm};
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid ${props => props.theme.colors.border};
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background-color: ${props => props.theme.colors.background};
+  }
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    color: ${props => props.theme.colors.text.secondary};
+  }
 `
 
 const ToggleContainer = styled.div`
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 `
 
 const ToggleLabel = styled.label`
   font-size: ${props => props.theme.typography.sizes.sm};
   font-weight: ${props => props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.text.primary};
-  margin-bottom: 0.25rem;
+  white-space: nowrap;
 `
 
 const ToggleWrapper = styled.div`
@@ -375,7 +443,43 @@ export default function Gallery() {
   const [visibleItems, setVisibleItems] = useState(ITEMS_PER_BATCH)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [filter, setFilter] = useState('both') // 'both', 'images', 'videos'
+  const [submitDropdownOpen, setSubmitDropdownOpen] = useState(false)
   const loadMoreRef = useRef(null)
+  const submitDropdownRef = useRef(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (submitDropdownRef.current && !submitDropdownRef.current.contains(event.target)) {
+        setSubmitDropdownOpen(false)
+      }
+    }
+
+    if (submitDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [submitDropdownOpen])
+
+  const handleEmailSubmit = () => {
+    window.location.href = 'mailto:billgrewalpics@gmail.com?subject=Photo Submission for Baljit Grewal Memorial'
+    setSubmitDropdownOpen(false)
+  }
+
+  const handleWhatsAppSubmit = () => {
+    window.open('https://chat.whatsapp.com/LnVkCDqrNJL1jvXDMJp8iD?mode=gi_t', '_blank', 'noopener,noreferrer')
+    setSubmitDropdownOpen(false)
+  }
+
+  const handleOtherSubmit = () => {
+    const subject = encodeURIComponent('Upload type - other')
+    const body = encodeURIComponent('Hi i have images of Baljit. can you send me upload instructions? My name is _____ and my cell is _______.')
+    window.location.href = `mailto:billgrewalpics@gmail.com?subject=${subject}&body=${body}`
+    setSubmitDropdownOpen(false)
+  }
 
   // Load images from JSON file
   useEffect(() => {
@@ -557,7 +661,48 @@ export default function Gallery() {
         <Title>
           <Images size={28} />
           Gallery
-          <Badge>More pictures coming soon!</Badge>
+          <SubmitBadge ref={submitDropdownRef}>
+            <SubmitButton
+              onClick={() => setSubmitDropdownOpen(!submitDropdownOpen)}
+              $isOpen={submitDropdownOpen}
+              aria-label="Submit your pictures"
+            >
+              Submit your pictures!
+              <ChevronDown size={14} />
+            </SubmitButton>
+            <Dropdown $isOpen={submitDropdownOpen}>
+              <DropdownItem
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleEmailSubmit()
+                }}
+              >
+                <Mail size={16} />
+                Email Files
+              </DropdownItem>
+              <DropdownItem
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleWhatsAppSubmit()
+                }}
+              >
+                <MessageCircle size={16} />
+                Share via WhatsApp
+              </DropdownItem>
+              <DropdownItem
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  handleOtherSubmit()
+                }}
+              >
+                <Mail size={16} />
+                Other
+              </DropdownItem>
+            </Dropdown>
+          </SubmitBadge>
         </Title>
 
         <ToggleContainer>
