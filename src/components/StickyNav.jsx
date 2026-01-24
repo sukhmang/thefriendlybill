@@ -13,7 +13,6 @@ const Nav = styled.nav`
   box-shadow: ${props => props.theme.shadows.md};
   transition: box-shadow 0.3s ease;
   box-sizing: border-box;
-  overflow: hidden;
 `
 
 const NavContainer = styled.div`
@@ -100,8 +99,7 @@ const NavButton = styled.button`
   flex: 1;
   min-width: 0;
   box-sizing: border-box;
-  transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease, font-weight 0.2s ease;
-  transform: ${props => props.$portraitVisible ? 'translateX(0)' : 'translateX(0)'};
+  transition: color 0.2s ease, font-weight 0.2s ease;
   opacity: 1;
 
   @media (min-width: 640px) {
