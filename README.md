@@ -85,18 +85,28 @@ npm run build
 
 ### Gallery
 - **Infinite Scroll**: Automatically loads more images as you scroll
-- **Lazy Loading**: Images only load when entering viewport
+- **Lazy Loading**: Images only load when entering viewport (50px before)
+- **Thumbnail System**: Images use optimized thumbnails in grid view (400px width, ~100-200KB each)
+  - Full-resolution images load only in lightbox
+  - Automatic fallback to full image if thumbnail missing
+- **MP4 Video Support**: 
+  - Videos autoplay, loop, and are muted in grid view
+  - Videos play with sound, autoplay, and loop in lightbox
+  - 32 videos currently in gallery
 - **Filter Toggle**: Slideable toggle to filter by:
   - Both (default)
   - Images Only
   - Videos Only
+- **CSV-Based Sorting**: Gallery order controlled by `gallery.csv` with `default_sort` column
+  - Videos prioritized to appear in first 120 items
+  - Custom sort order for curated display
 - **Lightbox**: Full-screen viewing with:
   - Auto-hiding navigation buttons (appear on hover, hide after 1s inactivity)
   - Keyboard navigation (Arrow keys, Escape)
   - Swipe gestures (mobile and desktop)
   - Image counter
 - **Badge**: "More pictures coming soon!" notification
-- **Image Management**: Uses `public/images/images.json` for image list
+- **Image Management**: Uses `public/images/images.json` (synced from `gallery.csv`)
 
 ### Navigation
 - Sticky navigation bar with three sections:
@@ -149,37 +159,63 @@ export const EVENT_DATA = {
 
 ## Gallery Management
 
-### Adding Images
+### Current Gallery Statistics
 
-1. **Place images** in `public/images/` folder
-   - Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`
+- **Total Files**: 679 media files
+- **Images**: 647 files
+- **Videos (MP4)**: 32 files
+- **Total Size**: ~1.2GB
+- **Location**: `public/images/`
+- **Thumbnails**: Generated on-demand (saved to `public/images/thumbnails/`)
 
-2. **Update `images.json`** automatically:
+### Gallery Workflow
+
+The gallery uses a **CSV-based management system** for metadata and sorting:
+
+1. **`gallery.csv`** - Master file containing all metadata (filename, type, alt text, category, year, date, tags, default_sort)
+2. **`images.json`** - Simple array of filenames, synced from CSV and sorted by `default_sort`
+
+### Adding New Media Files
+
+1. **Place files** in `public/images/` folder
+   - Supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`, `.mp4`, `.webm`, `.mov`
+
+2. **Run the master sync script**:
    ```bash
-   npm run update-gallery
+   npm run sync-gallery
    ```
-   
-   Or manually edit `public/images/images.json`:
-   ```json
-   [
-     "image001.jpg",
-     "image002.jpg",
-     "memory001.gif"
-   ]
-   ```
+   This single command will:
+   - Update `gallery.csv` (adds new files, removes deleted files)
+   - Generate thumbnails for new images
+   - Sync `images.json` from CSV (preserves sort order)
 
-3. **That's it!** The gallery will:
-   - Automatically detect image type (image vs video/GIF)
-   - Lazy load images as you scroll
-   - Support infinite scroll
-   - Display in responsive grid
+   **This is the recommended workflow!** One command does everything.
+
+   **Alternative (manual steps):**
+   - `npm run update-gallery-csv` - Sync CSV only
+   - `npm run generate-thumbnails` - Generate thumbnails only
+   - `node scripts/sync-images-json-from-csv.js` - Sync images.json only
+
+### Customizing Sort Order
+
+Edit `gallery.csv` and set `default_sort` values:
+- Lower numbers = appear first
+- Videos are currently set to appear in first 120 items
+- Default for new files: 10000 (appears at end)
+
+Then sync:
+```bash
+node scripts/sync-images-json-from-csv.js
+```
 
 ### Gallery Features
 
-- **Infinite Scroll**: Loads 24 images at a time, more as you scroll
-- **Lazy Loading**: Images only load when near viewport (50px before)
+- **Infinite Scroll**: Loads 24 items at a time, more as you scroll
+- **Lazy Loading**: Images/videos only load when near viewport (50px before)
+- **Thumbnail System**: Images use thumbnails in grid, full-res in lightbox
+- **Video Support**: MP4s autoplay (muted) in grid, with sound in lightbox
 - **Filter Toggle**: Switch between Images, Videos, or Both
-- **Lightbox**: Click any image to view full-screen
+- **Lightbox**: Click any item to view full-screen
   - Navigation buttons appear on hover
   - Auto-hide after 1 second of mouse inactivity
   - Keyboard and swipe navigation
@@ -218,17 +254,33 @@ The `dist/` folder contains the production-ready static files.
 
 ### Important Notes
 
-- **Image Size**: Keep `public/images/` folder under 15MB for optimal deployment
-- **Large Collections**: For 200+ images, consider using a CDN
+- **Current Gallery Size**: ~1.2GB (679 files: 647 images, 32 videos)
+- **Thumbnail System**: Reduces initial load from 100MB+ to ~5MB
+- **Large Collections**: For very large collections (500+ files), consider:
+  - Using a CDN for media files
+  - Generating thumbnails for all images
+  - Compressing videos before upload
 - **Program Image**: Place program image at `public/images/program/program.JPG`
 - **Portrait**: Place hero portrait at `public/portrait.png`
+- **Deployment**: Vercel handles large static assets, but consider CDN for 1GB+ collections
 
 ## Scripts
 
+### Development
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
-- `npm run update-gallery` - Auto-update `images.json` from `public/images/` folder
+
+### Gallery Management
+- `npm run sync-gallery` - **Master script**: Syncs everything (CSV, thumbnails, images.json) - Use this when adding/removing files
+- `npm run update-gallery` - Auto-update `images.json` from `public/images/` folder (simple list)
+- `npm run update-gallery-csv` - Sync `gallery.csv` with files (adds new, removes deleted)
+- `npm run generate-thumbnails` - Generate thumbnails for all images (requires `sharp` package)
+- `node scripts/randomize-sort-order.js` - Randomly assign sort orders (videos in first 120)
+- `node scripts/sync-images-json-from-csv.js` - Sync `images.json` from `gallery.csv` (preserves sort order)
+
+
+---
 
 ## Recent Updates
 
@@ -241,7 +293,12 @@ The `dist/` folder contains the production-ready static files.
 - ✅ Added slideable filter toggle (Images/Videos/Both)
 - ✅ Lightbox navigation buttons auto-hide on mouse inactivity
 - ✅ Tree of Life favicon
-- ✅ Gallery uses `images.json` instead of CSV
+- ✅ **MP4 video support** - Videos autoplay in grid (muted), with sound in lightbox
+- ✅ **Thumbnail system** - Optimized thumbnails for images (400px, ~100-200KB)
+- ✅ **CSV-based gallery management** - Full metadata support with `gallery.csv`
+- ✅ **Custom sort ordering** - `default_sort` column controls display order
+- ✅ **Video prioritization** - Videos appear in first 120 items
+- ✅ **Gallery sync scripts** - Automated CSV/JSON synchronization
 
 ---
 
@@ -249,34 +306,162 @@ The `dist/` folder contains the production-ready static files.
 
 ### Scripts Documentation
 
+#### sync-gallery.js ⭐ **MASTER SCRIPT**
+
+**One-stop script to sync the entire gallery system when files are added/removed.**
+
+**Usage:**
+```bash
+npm run sync-gallery
+```
+
+**What it does:**
+1. **Updates `gallery.csv`** - Adds new files, removes deleted files
+2. **Generates thumbnails** - Creates thumbnails for new images (skips existing ones)
+3. **Syncs `images.json`** - Updates from CSV, preserving sort order
+
+**When to use:**
+- **After adding new images/videos** to `public/images/`
+- **After deleting files** from `public/images/`
+- **After renaming files** in `public/images/`
+- **Any time you modify the images folder**
+
+**This is the recommended script for regular gallery maintenance.**
+
+---
+
 #### update-gallery.js
 
-Automatically scans the `public/images/` folder and updates `images.json` with all image files found.
+Automatically scans the `public/images/` folder and updates `images.json` with all media files found.
 
 **Usage:**
 ```bash
 npm run update-gallery
 ```
 
-Or directly:
+**What it does:**
+1. Scans `public/images/` for media files
+2. Filters for supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`, `.mp4`, `.webm`, `.mov`
+3. Sorts filenames alphabetically
+4. Updates `public/images/images.json` with the list
+5. Reports image and video counts
+
+**When to use:**
+- Quick update of `images.json` without CSV metadata
+- Simple file list generation
+
+**Note:** For full metadata management, use `update-gallery-csv.js` instead.
+
+---
+
+#### update-gallery-csv.js
+
+Syncs `gallery.csv` with actual files in `public/images/`. This is the recommended script for gallery management.
+
+**Usage:**
 ```bash
-node scripts/update-gallery.js
+npm run update-gallery-csv
 ```
 
 **What it does:**
-1. Scans `public/images/` for image files
-2. Filters for supported formats: `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.bmp`, `.svg`
-3. Sorts filenames alphabetically
-4. Updates `public/images/images.json` with the list
-5. Reports how many images were found
+1. Reads existing `gallery.csv` entries
+2. **Removes** entries for files that no longer exist
+3. **Adds** entries for new files (images, MP4s, GIFs)
+4. Sets `default_sort` to 10000 for new entries (or entries without sort value)
+5. Preserves existing metadata (alt text, category, tags, etc.)
+6. Sorts output by `default_sort` value
 
 **When to use:**
-Run this script whenever you:
-- Add new images to `public/images/`
-- Remove images from `public/images/`
-- Rename image files
+- After adding new images/videos to `public/images/`
+- After deleting files from `public/images/`
+- To sync CSV with actual files
 
-The script will automatically update `images.json` to match what's actually in the folder.
+**Output:**
+- Updated `gallery.csv` with all current files
+- New files get default metadata (filename as alt text, empty category/tags)
+
+---
+
+#### generate-thumbnails.js
+
+Generates optimized thumbnails for all images in the gallery.
+
+**Usage:**
+```bash
+npm run generate-thumbnails
+```
+
+**Requirements:**
+```bash
+npm install sharp
+```
+
+**What it does:**
+1. Scans `public/images/` for image files (excludes videos/GIFs)
+2. Creates `public/images/thumbnails/` directory if needed
+3. Generates JPEG thumbnails (400px width, 80% quality, ~100-200KB each)
+4. Skips images that already have up-to-date thumbnails
+5. All thumbnails saved as `.jpg` regardless of original format
+
+**When to use:**
+- After adding new images
+- To optimize gallery performance (thumbnails load much faster)
+- Initial setup for existing image collection
+
+**Performance Impact:**
+- Grid view: Loads ~5MB of thumbnails instead of 100MB+ of full images
+- Lightbox: Still loads full-resolution images
+
+---
+
+#### randomize-sort-order.js
+
+Randomly assigns `default_sort` values to all entries in `gallery.csv`.
+
+**Usage:**
+```bash
+node scripts/randomize-sort-order.js
+```
+
+**What it does:**
+1. Reads `gallery.csv` and separates videos from images
+2. Assigns videos random sort values 1-120 (ensures all videos in first 120 items)
+3. Assigns images random sort values 1-10000
+4. Sorts all entries by `default_sort` value
+5. Writes updated CSV
+
+**When to use:**
+- One-time initialization of sort order
+- To randomize gallery display order
+- To ensure videos appear prominently (first 120 items)
+
+**Note:** After running, sync `images.json` with `sync-images-json-from-csv.js`
+
+---
+
+#### sync-images-json-from-csv.js
+
+Syncs `images.json` from `gallery.csv`, preserving the sort order.
+
+**Usage:**
+```bash
+node scripts/sync-images-json-from-csv.js
+```
+
+**What it does:**
+1. Reads `gallery.csv` and extracts filenames
+2. Sorts by `default_sort` value (ascending)
+3. Writes ordered filenames to `public/images/images.json`
+
+**When to use:**
+- After editing `gallery.csv` sort order
+- After running `randomize-sort-order.js`
+- To ensure `images.json` matches CSV order
+
+**Why needed:**
+- Gallery component reads from `images.json` (simple array)
+- CSV contains metadata and sort order
+- This script bridges the two, ensuring gallery displays in correct order
 
 ---
 
