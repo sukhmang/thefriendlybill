@@ -15,6 +15,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { fetchCloudinaryVideos } from './fetch-cloudinary-videos.js';
+import { fetchCloudinaryImages } from './fetch-cloudinary-images.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -122,7 +124,12 @@ function getFileType(filename) {
   }
 }
 
-function updateGalleryCSV() {
+// Check if a filename is a Cloudinary URL
+function isCloudinaryUrl(filename) {
+  return filename && (filename.startsWith('http://') || filename.startsWith('https://'));
+}
+
+async function updateGalleryCSV() {
   try {
     // Check if images directory exists
     if (!fs.existsSync(IMAGES_DIR)) {
@@ -137,9 +144,9 @@ function updateGalleryCSV() {
     const requiredHeaders = ['filename', 'type', 'alt', 'category', 'year', 'date', 'tags', 'default_sort'];
     const allHeaders = [...new Set([...requiredHeaders, ...headers])];
     
-    // Get all files in images directory
+    // Get all local files in images directory
     const files = fs.readdirSync(IMAGES_DIR);
-    const mediaFiles = files
+    const localMediaFiles = files
       .filter(file => {
         const ext = path.extname(file).toLowerCase();
         return ALL_EXTENSIONS.includes(ext);
@@ -149,9 +156,23 @@ function updateGalleryCSV() {
         return !file.startsWith('thumbnails') && !file.endsWith('.json');
       });
 
-    console.log(`📁 Found ${mediaFiles.length} media file(s) in ${IMAGES_DIR}\n`);
+    console.log(`📁 Found ${localMediaFiles.length} local media file(s) in ${IMAGES_DIR}`);
 
-    // Create a map of existing CSV entries by filename
+    // Fetch Cloudinary videos and images
+    const cloudinaryVideos = await fetchCloudinaryVideos();
+    const cloudinaryImages = await fetchCloudinaryImages();
+    const cloudinaryUrls = new Set([
+      ...cloudinaryVideos.map(v => v.url),
+      ...cloudinaryImages.map(i => i.url)
+    ]);
+    const cloudinaryUrlMap = new Map([
+      ...cloudinaryVideos.map(v => [v.url, { ...v, type: 'video' }]),
+      ...cloudinaryImages.map(i => [i.url, { ...i, type: 'image' }])
+    ]);
+
+    console.log(`☁️  Found ${cloudinaryVideos.length} video(s) and ${cloudinaryImages.length} image(s) in Cloudinary\n`);
+
+    // Create a map of existing CSV entries by filename/URL
     const existingMap = new Map();
     existingRows.forEach(row => {
       if (row.filename) {
@@ -159,17 +180,26 @@ function updateGalleryCSV() {
       }
     });
 
-    // Step 1: Remove entries for files that no longer exist
+    // Step 1: Remove entries for files that no longer exist (local or Cloudinary)
     const removedFiles = [];
     const validRows = existingRows.filter(row => {
       if (!row.filename) return false;
       
-      const filePath = path.join(IMAGES_DIR, row.filename);
-      const exists = fs.existsSync(filePath);
-      
-      if (!exists) {
-        removedFiles.push(row.filename);
-        return false;
+      if (isCloudinaryUrl(row.filename)) {
+        // Check if Cloudinary URL still exists
+        const exists = cloudinaryUrls.has(row.filename);
+        if (!exists) {
+          removedFiles.push(row.filename);
+          return false;
+        }
+      } else {
+        // Check if local file exists
+        const filePath = path.join(IMAGES_DIR, row.filename);
+        const exists = fs.existsSync(filePath);
+        if (!exists) {
+          removedFiles.push(row.filename);
+          return false;
+        }
       }
       
       return true;
@@ -177,15 +207,20 @@ function updateGalleryCSV() {
 
     if (removedFiles.length > 0) {
       console.log(`🗑️  Removed ${removedFiles.length} entry/entries for deleted files:`);
-      removedFiles.forEach(file => console.log(`   - ${file}`));
+      removedFiles.forEach(file => {
+        const displayName = isCloudinaryUrl(file) 
+          ? file.split('/').pop() || file.substring(0, 50) + '...'
+          : file;
+        console.log(`   - ${displayName}`);
+      });
       console.log('');
     }
 
-    // Step 2: Add new files that aren't in CSV
+    // Step 2: Add new local files that aren't in CSV
     const newFiles = [];
     const updatedRows = [...validRows];
     
-    mediaFiles.forEach(filename => {
+    localMediaFiles.forEach(filename => {
       if (!existingMap.has(filename)) {
         // New file - add to CSV
         const fileType = getFileType(filename);
@@ -220,9 +255,87 @@ function updateGalleryCSV() {
       }
     });
 
+    // Step 3: Add new Cloudinary videos that aren't in CSV
+    cloudinaryVideos.forEach(video => {
+      if (!existingMap.has(video.url)) {
+        // New Cloudinary video - add to CSV
+        const baseName = video.filename.replace(/\.[^/.]+$/, '') || video.publicId.split('/').pop();
+        
+        const newRow = {
+          filename: video.url, // Store full URL as filename
+          type: 'video',
+          alt: baseName,
+          category: '',
+          year: '',
+          date: '',
+          tags: '',
+          default_sort: DEFAULT_SORT.toString()
+        };
+        
+        // Fill in any other headers with empty strings
+        allHeaders.forEach(header => {
+          if (!newRow[header]) {
+            newRow[header] = '';
+          }
+        });
+        
+        updatedRows.push(newRow);
+        newFiles.push(video.url);
+      } else {
+        // Existing Cloudinary video - ensure it has a default_sort value
+        const existingRow = existingMap.get(video.url);
+        if (!existingRow.default_sort || existingRow.default_sort.trim() === '') {
+          existingRow.default_sort = DEFAULT_SORT.toString();
+        }
+      }
+    });
+
+    // Step 4: Add new Cloudinary images that aren't in CSV
+    cloudinaryImages.forEach(image => {
+      if (!existingMap.has(image.url)) {
+        // New Cloudinary image - add to CSV
+        const baseName = image.filename.replace(/\.[^/.]+$/, '') || image.publicId.split('/').pop();
+        
+        const newRow = {
+          filename: image.url, // Store full URL as filename
+          type: 'image',
+          alt: baseName,
+          category: '',
+          year: '',
+          date: '',
+          tags: '',
+          default_sort: DEFAULT_SORT.toString()
+        };
+        
+        // Fill in any other headers with empty strings
+        allHeaders.forEach(header => {
+          if (!newRow[header]) {
+            newRow[header] = '';
+          }
+        });
+        
+        updatedRows.push(newRow);
+        newFiles.push(image.url);
+      } else {
+        // Existing Cloudinary image - ensure it has a default_sort value
+        const existingRow = existingMap.get(image.url);
+        if (!existingRow.default_sort || existingRow.default_sort.trim() === '') {
+          existingRow.default_sort = DEFAULT_SORT.toString();
+        }
+      }
+    });
+
     if (newFiles.length > 0) {
       console.log(`➕ Added ${newFiles.length} new file(s):`);
-      newFiles.forEach(file => console.log(`   - ${file} (default_sort: ${DEFAULT_SORT})`));
+      newFiles.forEach(file => {
+        const displayName = isCloudinaryUrl(file)
+          ? `Cloudinary: ${file.split('/').pop() || file.substring(0, 50) + '...'}`
+          : file;
+        const fileType = isCloudinaryUrl(file) 
+          ? (file.includes('/video/upload/') ? 'video' : 'image')
+          : getFileType(file);
+        console.log(`   - ${displayName} (${fileType}, default_sort: ${DEFAULT_SORT})`);
+      });
       console.log('');
     }
 
@@ -260,15 +373,22 @@ function updateGalleryCSV() {
       console.log(`   - New entries: ${newFiles.length}`);
     }
     
-    // Show breakdown by type
+    // Show breakdown by type and source
     const imageCount = updatedRows.filter(r => r.type === 'image').length;
     const videoCount = updatedRows.filter(r => r.type === 'video').length;
     const gifCount = updatedRows.filter(r => r.type === 'gif').length;
+    const localCount = updatedRows.filter(r => !isCloudinaryUrl(r.filename)).length;
+    const cloudinaryCount = updatedRows.filter(r => isCloudinaryUrl(r.filename)).length;
+    const cloudinaryVideoCount = updatedRows.filter(r => isCloudinaryUrl(r.filename) && r.type === 'video').length;
+    const cloudinaryImageCount = updatedRows.filter(r => isCloudinaryUrl(r.filename) && r.type === 'image').length;
     
     console.log(`\n   Breakdown:`);
     console.log(`   - Images: ${imageCount}`);
     console.log(`   - Videos: ${videoCount}`);
     console.log(`   - GIFs: ${gifCount}`);
+    console.log(`\n   By Source:`);
+    console.log(`   - Local files: ${localCount}`);
+    console.log(`   - Cloudinary: ${cloudinaryCount} (${cloudinaryVideoCount} videos, ${cloudinaryImageCount} images)`);
 
   } catch (error) {
     console.error('❌ Error updating gallery CSV:', error.message);

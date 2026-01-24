@@ -9,10 +9,13 @@
     "update-gallery": "node scripts/update-gallery.js",
     "update-gallery-csv": "node scripts/update-gallery-csv.js",
     "generate-thumbnails": "node scripts/generate-thumbnails.js",
+    "sort-gallery-csv": "node scripts/sort-gallery-csv.js",
     "sync-gallery": "node scripts/sync-gallery.js",
     "upload-to-cdn": "node scripts/upload-to-cdn.js"
   },
   "dependencies": {
+    "cloudinary": "^2.9.0",
+    "dotenv": "^17.2.3",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",

@@ -85,19 +85,22 @@ npm run build
 
 ### Gallery
 - **Infinite Scroll**: Automatically loads more images as you scroll
-- **Lazy Loading**: Images only load when entering viewport (50px before)
-- **Thumbnail System**: Images use optimized thumbnails in grid view (400px width, ~100-200KB each)
+- **Lazy Loading**: Images/videos only load when entering viewport (50px before)
+- **Thumbnail System**: 
+  - **Local images**: Use optimized thumbnails in grid view (400px width, ~100-200KB each)
+  - **Cloudinary images**: Use on-the-fly thumbnails (400x400px, auto quality)
   - Full-resolution images load only in lightbox
   - Automatic fallback to full image if thumbnail missing
-- **MP4 Video Support**: 
-  - Videos autoplay, loop, and are muted in grid view
+- **Video Support**: 
+  - **Local videos**: MP4s autoplay, loop, and are muted in grid view
+  - **Cloudinary videos**: Same behavior, hosted externally
   - Videos play with sound, autoplay, and loop in lightbox
-  - 32 videos currently in gallery
 - **Filter Toggle**: Slideable toggle to filter by:
   - Both (default)
   - Images Only
   - Videos Only
 - **CSV-Based Sorting**: Gallery order controlled by `gallery.csv` with `default_sort` column
+  - **Video Priority**: Videos appear in first 120 positions (use `npm run sort-gallery-csv`)
   - Videos prioritized to appear in first 120 items
   - Custom sort order for curated display
 - **Lightbox**: Full-screen viewing with:
@@ -185,11 +188,17 @@ The gallery uses a **CSV-based management system** for metadata and sorting:
    npm run sync-gallery
    ```
    This single command will:
-   - Update `gallery.csv` (adds new files, removes deleted files)
-   - Generate thumbnails for new images
+   - Update `gallery.csv` (adds new files from local + Cloudinary, removes deleted files)
+   - Generate thumbnails for new local images
    - Sync `images.json` from CSV (preserves sort order)
 
-   **This is the recommended workflow!** One command does everything.
+3. **Sort the gallery** (optional, but recommended):
+   ```bash
+   npm run sort-gallery-csv
+   ```
+   This ensures videos appear in the first 120 positions, images after.
+
+   **This is the recommended workflow!** Two commands sync and sort everything.
 
    **Alternative (manual steps):**
    - `npm run update-gallery-csv` - Sync CSV only
@@ -252,17 +261,52 @@ npm run build
 
 The `dist/` folder contains the production-ready static files.
 
+### Cloudinary Setup (for Video Hosting)
+
+To use Cloudinary for hosting videos (recommended to keep repo size small):
+
+1. **Sign up** at https://cloudinary.com (free tier: 25GB storage, 25GB bandwidth/month)
+
+2. **Get your credentials** from https://console.cloudinary.com/settings/api-keys
+
+3. **Create `.env` file** in project root:
+   ```env
+   CLOUDINARY_CLOUD_NAME=your_cloud_name
+   CLOUDINARY_API_KEY=your_api_key
+   CLOUDINARY_API_SECRET=your_api_secret
+   ```
+
+4. **Upload videos** to Cloudinary (via dashboard or API)
+
+5. **Run sync script** - it will automatically:
+   - Fetch all videos from Cloudinary
+   - Add them to `gallery.csv`
+   - Sync `images.json`
+   ```bash
+   npm run sync-gallery
+   ```
+
+**Benefits:**
+- ✅ Videos stored in Cloudinary (not in repo)
+- ✅ Smaller repo size (only images + thumbnails)
+- ✅ Faster deployments
+- ✅ Better performance (CDN delivery)
+- ✅ Automatic sync with existing workflow
+
+**Note:** The gallery code already supports Cloudinary URLs - just add them to `images.json` or let the sync script handle it!
+
 ### Important Notes
 
-- **Current Gallery Size**: ~1.2GB (679 files: 647 images, 32 videos)
+- **Current Gallery Size**: ~307MB (647 images, 4 local videos)
 - **Thumbnail System**: Reduces initial load from 100MB+ to ~5MB
-- **Large Collections**: For very large collections (500+ files), consider:
-  - Using a CDN for media files
-  - Generating thumbnails for all images
-  - Compressing videos before upload
+- **Video Hosting**: Use Cloudinary for videos to keep repo under Vercel limits
+- **Hybrid Approach** (Recommended): 
+  - **Local**: Keep 1-2 key images locally (e.g., portrait)
+  - **Cloudinary**: All other images and videos hosted externally
+  - **Thumbnails**: Local images use generated thumbnails, Cloudinary images use on-the-fly thumbnails
 - **Program Image**: Place program image at `public/images/program/program.JPG`
 - **Portrait**: Place hero portrait at `public/portrait.png`
-- **Deployment**: Vercel handles large static assets, but consider CDN for 1GB+ collections
+- **Deployment**: Vercel free tier has ~250MB limit - use Cloudinary for videos!
 
 ## Scripts
 
@@ -273,10 +317,16 @@ The `dist/` folder contains the production-ready static files.
 
 ### Gallery Management
 - `npm run sync-gallery` - **Master script**: Syncs everything (CSV, thumbnails, images.json) - Use this when adding/removing files
+  - Works with **local files** (in `public/images/`) and **Cloudinary** (images + videos fetched via API)
 - `npm run update-gallery` - Auto-update `images.json` from `public/images/` folder (simple list)
 - `npm run update-gallery-csv` - Sync `gallery.csv` with files (adds new, removes deleted)
-- `npm run generate-thumbnails` - Generate thumbnails for all images (requires `sharp` package)
-- `node scripts/randomize-sort-order.js` - Randomly assign sort orders (videos in first 120)
+  - **Cloudinary Support**: Automatically fetches images and videos from your Cloudinary account
+- `npm run generate-thumbnails` - Generate thumbnails for all local images (requires `sharp` package)
+  - Only processes local images (Cloudinary images use on-the-fly thumbnails)
+- `npm run sort-gallery-csv` - **Sort gallery with video priority** - Assigns videos to first 120 positions, images after
+  - Can be run anytime to re-sort the gallery
+  - Videos get sort values 1-120, images get 121-10000
+- `node scripts/randomize-sort-order.js` - Randomly assign sort orders (videos in first 120) - Legacy, use `sort-gallery-csv` instead
 - `node scripts/sync-images-json-from-csv.js` - Sync `images.json` from `gallery.csv` (preserves sort order)
 
 
@@ -316,17 +366,34 @@ npm run sync-gallery
 ```
 
 **What it does:**
-1. **Updates `gallery.csv`** - Adds new files, removes deleted files
-2. **Generates thumbnails** - Creates thumbnails for new images (skips existing ones)
+1. **Updates `gallery.csv`** - Adds new files from:
+   - **Local folder** (`public/images/`) - images and videos
+   - **Cloudinary** (via API) - videos only
+   - Automatically fetches all videos from your Cloudinary account
+   - Removes entries for deleted files (local or Cloudinary)
+2. **Generates thumbnails** - Creates thumbnails for new local images (skips existing ones)
+   - Cloudinary videos don't need thumbnails (they play directly)
 3. **Syncs `images.json`** - Updates from CSV, preserving sort order
 
 **When to use:**
-- **After adding new images/videos** to `public/images/`
-- **After deleting files** from `public/images/`
+- **After adding new images** to `public/images/`
+- **After uploading videos to Cloudinary**
+- **After deleting files** from `public/images/` or Cloudinary
 - **After renaming files** in `public/images/`
-- **Any time you modify the images folder**
+- **Any time you modify the gallery**
 
 **This is the recommended script for regular gallery maintenance.**
+
+**Cloudinary Support:**
+- Requires `.env` file with Cloudinary credentials (see Cloudinary Setup above)
+- Automatically detects and syncs images and videos from your Cloudinary account
+- If Cloudinary credentials are missing, script continues with local files only
+
+**After syncing, run sort script:**
+```bash
+npm run sort-gallery-csv
+```
+This ensures videos appear in the first 120 positions.
 
 ---
 
@@ -354,7 +421,113 @@ npm run update-gallery
 
 ---
 
-#### update-gallery-csv.js
+#### update-gallery-csv.js (Now with Cloudinary Support!)
+
+**Syncs `gallery.csv` with actual files in `public/images/` AND Cloudinary images/videos.**
+
+**Usage:**
+```bash
+npm run update-gallery-csv
+```
+
+**What it does:**
+1. **Scans local folder** (`public/images/`) for images and videos
+2. **Fetches Cloudinary resources** via API (if credentials configured):
+   - Images from Cloudinary
+   - Videos from Cloudinary
+3. **Removes entries** for files that no longer exist (local or Cloudinary)
+4. **Adds new entries** for files not in CSV:
+   - Local files: `filename.jpg` or `video.mp4`
+   - Cloudinary images: Full URL `https://res.cloudinary.com/.../image.jpg`
+   - Cloudinary videos: Full URL `https://res.cloudinary.com/.../video.mp4`
+5. **Sets `default_sort`** to 10000 for new entries
+
+**Cloudinary Integration:**
+- Automatically queries your Cloudinary account for all images and videos
+- Uses Cloudinary API to get secure HTTPS URLs
+- Detects if a CSV entry is a Cloudinary URL (starts with `http://` or `https://`)
+- Validates that Cloudinary URLs still exist before keeping them
+
+**Output:**
+- Shows breakdown: Images, Videos, GIFs
+- Shows source breakdown: Local files vs Cloudinary (with video/image counts)
+- Lists all added/removed files
+
+#### sort-gallery-csv.js ⭐ **NEW - Gallery Sorter**
+
+**Sorts gallery.csv with video priority - videos appear in first 120 positions.**
+
+**Usage:**
+```bash
+npm run sort-gallery-csv
+```
+
+**What it does:**
+1. **Separates videos and images** from CSV
+2. **Assigns videos** to sort values 1-120 (first 120 positions)
+3. **Assigns images** to sort values 121-10000 (after videos)
+4. **Randomizes order** within each group for variety
+5. **Writes sorted CSV** back to file
+
+**When to use:**
+- **After uploading new videos** - Ensures they appear early in gallery
+- **After adding many images** - Re-balances the sort order
+- **Anytime you want to re-sort** - Run this to apply video priority
+
+**Features:**
+- Videos always appear in first 120 items
+- Images appear after videos
+- Can be run multiple times (re-randomizes each time)
+- Preserves all metadata (alt, category, tags, etc.)
+
+**Example output:**
+```
+📊 Found 36 video(s) and 647 image(s)
+✅ Successfully sorted gallery.csv
+   Videos: 36 (assigned sort values 1-120)
+   Images: 647 (assigned sort values 121-10000)
+✅ Verification: 36 of 36 videos appear in first 120 items
+```
+
+---
+
+#### fetch-cloudinary-videos.js
+
+**Fetches all videos from your Cloudinary account.**
+
+**Usage:**
+```bash
+node scripts/fetch-cloudinary-videos.js
+```
+
+**What it does:**
+- Queries Cloudinary API for all video resources
+- Returns array of video URLs
+- Used internally by `update-gallery-csv.js`
+
+**Requirements:**
+- `.env` file with Cloudinary credentials
+- `cloudinary` package installed
+
+---
+
+#### fetch-cloudinary-images.js
+
+**Fetches all images from your Cloudinary account.**
+
+**Usage:**
+```bash
+node scripts/fetch-cloudinary-images.js
+```
+
+**What it does:**
+- Queries Cloudinary API for all image resources
+- Returns array of image URLs
+- Used internally by `update-gallery-csv.js`
+
+**Requirements:**
+- `.env` file with Cloudinary credentials
+- `cloudinary` package installed
 
 Syncs `gallery.csv` with actual files in `public/images/`. This is the recommended script for gallery management.
 

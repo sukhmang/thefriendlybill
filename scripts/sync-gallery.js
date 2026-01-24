@@ -5,9 +5,13 @@
  * 
  * One-stop script to sync the entire gallery system when files are added/removed.
  * This script runs all necessary operations:
- * 1. Updates gallery.csv (adds new files, removes deleted files)
- * 2. Generates thumbnails for new images
+ * 1. Updates gallery.csv (adds new files from local folder AND Cloudinary, removes deleted files)
+ * 2. Generates thumbnails for new local images (Cloudinary videos don't need thumbnails)
  * 3. Syncs images.json from gallery.csv (preserves sort order)
+ * 
+ * Supports:
+ * - Local images/videos in public/images/
+ * - Cloudinary videos (fetched via API)
  * 
  * Usage: npm run sync-gallery
  *    or: node scripts/sync-gallery.js
