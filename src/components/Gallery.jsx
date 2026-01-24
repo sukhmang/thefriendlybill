@@ -416,6 +416,15 @@ function LazyImage({ src, alt, thumbnail, onLoad }) {
 
     if (imgRef.current) {
       observer.observe(imgRef.current)
+      
+      // Explicit initial check for items already in view
+      // IntersectionObserver checks immediately, but this ensures it works
+      const rect = imgRef.current.getBoundingClientRect()
+      const isInViewport = rect.top < window.innerHeight + 50 && rect.bottom > -50
+      if (isInViewport) {
+        setInView(true)
+        observer.disconnect()
+      }
     }
 
     return () => {
@@ -503,6 +512,22 @@ function LazyVideo({ src, gridUrl, thumbnail, alt }) {
 
     if (containerRef.current) {
       observer.observe(containerRef.current)
+      
+      // Explicit initial check for videos already in view
+      // IntersectionObserver checks immediately, but this ensures it works
+      const rect = containerRef.current.getBoundingClientRect()
+      const isInViewport = rect.top < window.innerHeight + 50 && rect.bottom > -50
+      if (isInViewport) {
+        const nowInView = true
+        setInView(nowInView)
+        
+        // Try to play if in view
+        if (videoRef.current && !isPlaying) {
+          videoRef.current.play()
+            .then(() => setIsPlaying(true))
+            .catch(err => console.log('Video autoplay prevented:', err))
+        }
+      }
     }
 
     return () => {
