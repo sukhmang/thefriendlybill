@@ -405,11 +405,18 @@ export default function Gallery() {
           
           const lowerFilename = filename.toLowerCase()
           const isGif = lowerFilename.endsWith('.gif')
-          const isVideo = lowerFilename.match(/\.(mp4|webm|mov)$/i)
+          
+          // Detect videos: check for file extension OR Cloudinary video URL
+          const isVideo = lowerFilename.match(/\.(mp4|webm|mov)$/i) || 
+                         (isUrl && url.includes('/video/upload/'))
           
           // Generate thumbnail path for images
-          if (!isUrl && !isVideo && !isGif) {
-            // For images, use thumbnail (always .jpg, regardless of original format)
+          if (isUrl && !isVideo && !isGif && url.includes('/image/upload/')) {
+            // For Cloudinary images, generate thumbnail URL with transformation
+            // w_400 = width 400px, c_fill = fill crop, f_jpg = format JPG, q_auto = auto quality
+            thumbnail = url.replace('/image/upload/', '/image/upload/w_400,h_400,c_fill,f_jpg,q_auto/')
+          } else if (!isUrl && !isVideo && !isGif) {
+            // For local images, use thumbnail (always .jpg, regardless of original format)
             const baseName = filename.replace(/\.[^/.]+$/, '')
             thumbnail = `/images/thumbnails/${baseName}.jpg`
           } else {
