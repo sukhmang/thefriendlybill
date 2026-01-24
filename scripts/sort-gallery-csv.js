@@ -145,36 +145,65 @@ function sortGalleryCSV() {
     
     console.log(`📊 Found ${videos.length} video(s) and ${images.length} image(s)\n`);
 
-    // Assign sort values to videos (1-120)
-    // If there are more than 120 videos, they'll cycle through the range
+    // Strategy: Mix videos and images in first 120 positions
+    // 1. Assign videos to random positions within 1-120
+    // 2. Fill remaining positions 1-120 with images
+    // 3. Assign remaining images to positions 121+
+    
+    // Step 1: Assign videos to random positions within 1-120
     const videoSortValues = Array.from({ length: VIDEO_PRIORITY_RANGE }, (_, i) => i + 1);
     const shuffledVideoSortValues = shuffle([...videoSortValues]);
     
+    // Track which positions are taken by videos
+    const takenPositions = new Set();
+    
     videos.forEach((video, index) => {
-      video.default_sort = shuffledVideoSortValues[index % VIDEO_PRIORITY_RANGE].toString();
+      if (index < VIDEO_PRIORITY_RANGE) {
+        const position = shuffledVideoSortValues[index];
+        video.default_sort = position.toString();
+        takenPositions.add(position);
+      } else {
+        // If more than 120 videos, assign to positions 121+
+        video.default_sort = (VIDEO_PRIORITY_RANGE + 1 + (index - VIDEO_PRIORITY_RANGE)).toString();
+      }
     });
 
-    // Assign sort values to images (121+)
-    // Distribute images evenly across the remaining range
+    // Step 2: Fill remaining positions 1-120 with images
+    const availablePositions = [];
+    for (let i = 1; i <= VIDEO_PRIORITY_RANGE; i++) {
+      if (!takenPositions.has(i)) {
+        availablePositions.push(i);
+      }
+    }
+    const shuffledAvailablePositions = shuffle(availablePositions);
+    
+    // Step 3: Assign images to fill 1-120, then 121+
     const imageStartSort = VIDEO_PRIORITY_RANGE + 1;
-    const imageEndSort = 10000; // Max sort value
+    const imageEndSort = 10000;
     const imageRange = imageEndSort - imageStartSort + 1;
     
-    if (images.length > 0) {
-      // Create evenly distributed sort values for images
+    // Split images: some go to 1-120, rest go to 121+
+    const imagesForFirst120 = Math.min(images.length, availablePositions.length);
+    const imagesForAfter120 = images.length - imagesForFirst120;
+    
+    // Assign images to positions 1-120
+    for (let i = 0; i < imagesForFirst120; i++) {
+      images[i].default_sort = shuffledAvailablePositions[i].toString();
+    }
+    
+    // Assign remaining images to positions 121+
+    if (imagesForAfter120 > 0) {
       const imageSortValues = [];
-      const step = imageRange / images.length;
-      for (let i = 0; i < images.length; i++) {
+      const step = imageRange / imagesForAfter120;
+      for (let i = 0; i < imagesForAfter120; i++) {
         const sortValue = Math.floor(imageStartSort + (i * step));
         imageSortValues.push(sortValue);
       }
-      
-      // Shuffle the image sort values to randomize order
       const shuffledImageSortValues = shuffle(imageSortValues);
       
-      images.forEach((image, index) => {
-        image.default_sort = shuffledImageSortValues[index].toString();
-      });
+      for (let i = 0; i < imagesForAfter120; i++) {
+        images[imagesForFirst120 + i].default_sort = shuffledImageSortValues[i].toString();
+      }
     }
 
     // Combine and sort by default_sort
@@ -194,8 +223,8 @@ function sortGalleryCSV() {
 
     // Report results
     console.log(`✅ Successfully sorted gallery.csv`);
-    console.log(`   Videos: ${videos.length} (assigned sort values 1-${VIDEO_PRIORITY_RANGE})`);
-    console.log(`   Images: ${images.length} (assigned sort values ${imageStartSort}-${imageEndSort})`);
+    console.log(`   Videos: ${videos.length} (assigned to positions 1-${VIDEO_PRIORITY_RANGE})`);
+    console.log(`   Images: ${images.length} (${imagesForFirst120} in positions 1-${VIDEO_PRIORITY_RANGE}, ${imagesForAfter120} in positions ${imageStartSort}+)`);
     
     console.log(`\n   First 20 items after sorting:`);
     allRows.slice(0, 20).forEach((row, index) => {
@@ -207,7 +236,9 @@ function sortGalleryCSV() {
     
     // Verification: Check how many videos are in the first 120 items
     const videosInFirst120 = allRows.slice(0, VIDEO_PRIORITY_RANGE).filter(r => r.type === 'video').length;
-    console.log(`\n   ✅ Verification: ${videosInFirst120} of ${videos.length} videos appear in first ${VIDEO_PRIORITY_RANGE} items`);
+    const imagesInFirst120 = allRows.slice(0, VIDEO_PRIORITY_RANGE).filter(r => r.type === 'image').length;
+    console.log(`\n   ✅ Verification: ${videosInFirst120} videos and ${imagesInFirst120} images appear in first ${VIDEO_PRIORITY_RANGE} items`);
+    console.log(`   ✅ All ${videos.length} videos appear within the first ${VIDEO_PRIORITY_RANGE} items`);
     
     if (videos.length > VIDEO_PRIORITY_RANGE) {
       console.log(`   ⚠️  Note: You have ${videos.length} videos but only ${VIDEO_PRIORITY_RANGE} priority slots.`);
