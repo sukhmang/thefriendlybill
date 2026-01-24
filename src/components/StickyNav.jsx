@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import styled from 'styled-components'
-import { Video, Calendar, Images } from 'lucide-react'
+import { Video, Calendar, BookOpen, Images } from 'lucide-react'
 import { MEMORIAL_DATA } from '../constants'
 
 const Nav = styled.nav`
@@ -8,41 +8,57 @@ const Nav = styled.nav`
   top: 0;
   z-index: 50;
   width: 100%;
+  max-width: 100vw;
   background-color: ${props => props.theme.colors.cardBackground};
   box-shadow: ${props => props.theme.shadows.md};
   transition: box-shadow 0.3s ease;
+  box-sizing: border-box;
+  overflow: hidden;
 `
 
 const NavContainer = styled.div`
   margin: 0 auto;
-  max-width: 600px;
+  max-width: min(600px, 100vw);
   width: 100%;
   padding: 0 1rem;
+  box-sizing: border-box;
+  overflow: hidden;
 `
 
 const NavContent = styled.div`
   display: flex;
-  justify-content: space-around;
   align-items: center;
   padding: 1rem 0;
-  gap: 0.5rem;
-  position: relative;
-  transition: padding-left 0.3s ease;
-  padding-left: ${props => props.$portraitVisible ? '4.5rem' : '0'};
+  gap: 0;
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
 `
 
 const PortraitWrapper = styled.div`
-  position: absolute;
-  left: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
+  width: ${props => props.$show ? '4.5rem' : '0'};
+  padding-left: ${props => props.$show ? '1rem' : '0'};
   opacity: ${props => props.$show ? 1 : 0};
   transform: ${props => props.$show ? 'translateX(0)' : 'translateX(-20px)'};
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease, width 0.3s ease, padding-left 0.3s ease;
   pointer-events: ${props => props.$show ? 'auto' : 'none'};
-  width: ${props => props.$show ? '3rem' : '0'};
   overflow: hidden;
-  z-index: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+`
+
+const NavItems = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  flex: 1;
+  gap: 0.25rem;
+  min-width: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 `
 
 const Portrait = styled.img`
@@ -59,7 +75,7 @@ const NavButton = styled.button`
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0.5rem;
   font-size: ${props => props.theme.typography.sizes.sm};
   font-weight: ${props => props.$isActive ? props.theme.typography.weights.bold : props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.text.primary};
@@ -67,9 +83,16 @@ const NavButton = styled.button`
   border: none;
   cursor: pointer;
   position: relative;
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
   transition: color 0.2s ease, transform 0.3s ease, opacity 0.3s ease, font-weight 0.2s ease;
   transform: ${props => props.$portraitVisible ? 'translateX(0)' : 'translateX(0)'};
   opacity: 1;
+
+  @media (min-width: 640px) {
+    padding: 0.5rem 1rem;
+  }
 
   &:hover {
     color: ${props => props.theme.colors.accent};
@@ -80,8 +103,8 @@ const NavButton = styled.button`
     content: '';
     position: absolute;
     bottom: 0;
-    left: 0;
-    right: 0;
+    left: 0.5rem;
+    right: 0.5rem;
     height: 3px;
     background-color: ${props => props.theme.colors.accent};
     opacity: ${props => props.$isActive && props.$portraitVisible ? 1 : 0};
@@ -92,6 +115,14 @@ const NavButton = styled.button`
   svg {
     width: 1.5rem;
     height: 1.5rem;
+    flex-shrink: 0;
+  }
+
+  span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 `
 
@@ -126,7 +157,7 @@ export default function StickyNav() {
 
   // Track active section using IntersectionObserver
   useEffect(() => {
-    const sections = ['watch', 'event-details', 'gallery']
+    const sections = ['watch', 'event-details', 'stories', 'gallery']
     
     const handleScroll = () => {
       const navHeight = 100
@@ -188,7 +219,7 @@ export default function StickyNav() {
   return (
     <Nav>
       <NavContainer>
-        <NavContent $portraitVisible={showPortrait}>
+        <NavContent>
           <PortraitWrapper $show={showPortrait}>
             <Portrait 
               src={MEMORIAL_DATA.portraitImage} 
@@ -196,35 +227,47 @@ export default function StickyNav() {
             />
           </PortraitWrapper>
           
-          <NavButton
-            onClick={() => scrollToSection('watch')}
-            aria-label="Watch"
-            $portraitVisible={showPortrait}
-            $isActive={activeSection === 'watch'}
-          >
-            <Video />
-            <span>Watch</span>
-          </NavButton>
-          
-          <NavButton
-            onClick={() => scrollToSection('event-details')}
-            aria-label="Events"
-            $portraitVisible={showPortrait}
-            $isActive={activeSection === 'event-details'}
-          >
-            <Calendar />
-            <span>Events</span>
-          </NavButton>
-          
-          <NavButton
-            onClick={() => scrollToSection('gallery')}
-            aria-label="Gallery"
-            $portraitVisible={showPortrait}
-            $isActive={activeSection === 'gallery'}
-          >
-            <Images />
-            <span>Gallery</span>
-          </NavButton>
+          <NavItems>
+            <NavButton
+              onClick={() => scrollToSection('watch')}
+              aria-label="Watch"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'watch'}
+            >
+              <Video />
+              <span>Watch</span>
+            </NavButton>
+            
+            <NavButton
+              onClick={() => scrollToSection('event-details')}
+              aria-label="Events"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'event-details'}
+            >
+              <Calendar />
+              <span>Events</span>
+            </NavButton>
+            
+            <NavButton
+              onClick={() => scrollToSection('stories')}
+              aria-label="Stories"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'stories'}
+            >
+              <BookOpen />
+              <span>Stories</span>
+            </NavButton>
+            
+            <NavButton
+              onClick={() => scrollToSection('gallery')}
+              aria-label="Gallery"
+              $portraitVisible={showPortrait}
+              $isActive={activeSection === 'gallery'}
+            >
+              <Images />
+              <span>Gallery</span>
+            </NavButton>
+          </NavItems>
         </NavContent>
       </NavContainer>
     </Nav>
