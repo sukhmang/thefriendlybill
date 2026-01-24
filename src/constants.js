@@ -48,29 +48,28 @@ export const EVENT_DATA = {
   // Place PDF file in public/ folder and reference it here
   programPdfUrl: "/images/program/program.JPG", // Program image file
   
-  // Additional Events
+  // Additional events (e.g., Bhog, Celebration of Life)
   additionalEvents: [
     {
-      name: "Bhog & Antim Ardas",
-      date: "Thursday, January 22nd, 2026",
-      time: "1:30 PM MST",
-      note: "Followed by",
-      venueName: "Nanaksar Gurdwara",
+      title: "Bhog & Antim Ardas",
+      displayDate: "Monday, January 19th, 2026",
+      displayTime: "1:00 PM MST",
+      venueName: "Nanaksar Gurdwara Gursikh Temple Edmonton",
       address: {
-        street: "1410 Horsehill Rd NW",
+        street: "1410 Horsehill Road Northwest",
         city: "Edmonton",
         state: "AB",
         zip: "T5Y 6G6",
         country: "Canada",
-        full: "1410 Horsehill Rd NW, Edmonton, AB T5Y 6G6, Canada"
+        full: "1410 Horsehill Road Northwest, Edmonton, AB T5Y 6G6, Canada"
       },
-      isPast: true
+      note: "Followed by the Funeral Service on January 22nd",
+      isPast: true, // Mark as past event
     },
     {
-      name: "Celebration of Life in Vancouver",
-      date: "Sunday, January 25th, 2026",
-      time: "12:00 - 4:30 PM PST",
-      note: "Open House Style",
+      title: "Celebration of Life in Vancouver",
+      displayDate: "Saturday, February 7th, 2026",
+      displayTime: "2:00 PM - 6:00 PM PST",
       venueName: "Our Home",
       address: {
         street: "20-6061 Boundary Drive West",
@@ -80,15 +79,37 @@ export const EVENT_DATA = {
         country: "Canada",
         full: "20-6061 Boundary Drive West, Surrey, BC V3X2A6, Canada"
       },
+      note: "Open House Style - people can drop in any time and it's very casual",
       rsvp: {
-        name: "Varinder",
-        phone: "604-209-4571"
+        phone: "604-123-4567",
+        textPreferred: true,
+        note: "Text preferred"
       },
-      isPast: false
+      hasRSVP: true,
     }
-  ]
+  ],
+  
+  // Mark main event as past (for recorded content)
+  isMainEventPast: true,
 }
 
-// Gallery items are now loaded from CSV file
-// See: public/gallery.csv and GALLERY_CSV_GUIDE.md for details
-// The Gallery component automatically loads items from /gallery.csv
+// Home Videos - YouTube videos with metadata
+// Add your home videos here with YouTube video IDs
+export const HOME_VIDEOS = [
+  {
+    id: "CZsx-pHoSw8", // Varinder's First Birthday
+    title: "Varinder's First Birthday",
+    description: "Celebrating Varinder's first birthday with family, capturing the joy and excitement of this special milestone.",
+    location: "Edmonton",
+    year: 1983,
+    appearances: ["Baljit Grewal", "Varinder", "Family"],
+  },
+  {
+    id: "53mAlFbB_0s", // Varinder's Birthday 1989
+    title: "Varinder's Birthday 1989",
+    description: "Celebrating Varinder's birthday with family and friends, filled with laughter, cake, and cherished moments.",
+    location: "Edmonton",
+    year: 1989,
+    appearances: ["Baljit Grewal", "Varinder", "Family"],
+  },
+]
