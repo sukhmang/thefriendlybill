@@ -55,6 +55,12 @@ const MediaThumbnail = styled.img`
   transition: opacity 0.3s ease;
 `
 
+const MediaVideo = styled.video`
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+`
+
 const Placeholder = styled.div`
   position: absolute;
   top: 0;
@@ -235,10 +241,12 @@ const ResultsCount = styled.div`
 
 const ITEMS_PER_BATCH = 24
 
-// Lazy loaded image component with Intersection Observer
-function LazyImage({ src, alt, onLoad }) {
+// Lazy loaded image component with Intersection Observer and thumbnail fallback
+function LazyImage({ src, alt, thumbnail, onLoad }) {
   const [loaded, setLoaded] = useState(false)
   const [inView, setInView] = useState(false)
+  const [useThumbnail, setUseThumbnail] = useState(true)
+  const [imageSrc, setImageSrc] = useState(thumbnail || src)
   const imgRef = useRef(null)
 
   useEffect(() => {
@@ -272,16 +280,87 @@ function LazyImage({ src, alt, onLoad }) {
     if (onLoad) onLoad()
   }
 
+  const handleError = () => {
+    // If thumbnail fails to load, fallback to full image
+    if (useThumbnail && thumbnail && thumbnail !== src) {
+      setUseThumbnail(false)
+      setImageSrc(src)
+    } else {
+      // If full image also fails, just show placeholder
+      setLoaded(true) // Stop showing loading state
+    }
+  }
+
   return (
     <div ref={imgRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       {!loaded && <Placeholder />}
       {inView && (
         <MediaThumbnail
-          src={src}
+          src={imageSrc}
           alt={alt}
           $loaded={loaded}
           onLoad={handleLoad}
+          onError={handleError}
           loading="lazy"
+        />
+      )}
+    </div>
+  )
+}
+
+// Lazy loaded video component for grid view (muted, looped, autoplay)
+function LazyVideo({ src, alt }) {
+  const [inView, setInView] = useState(false)
+  const videoRef = useRef(null)
+  const containerRef = useRef(null)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setInView(true)
+            observer.disconnect()
+          }
+        })
+      },
+      {
+        rootMargin: '50px',
+      }
+    )
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current)
+    }
+
+    return () => {
+      if (containerRef.current) {
+        observer.disconnect()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (inView && videoRef.current) {
+      // Try to play the video (muted, looped, autoplay)
+      videoRef.current.play().catch(err => {
+        console.log('Video autoplay prevented:', err)
+      })
+    }
+  }, [inView])
+
+  return (
+    <div ref={containerRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {!inView && <Placeholder />}
+      {inView && (
+        <MediaVideo
+          ref={videoRef}
+          src={src}
+          muted
+          loop
+          playsInline
+          autoPlay
+          preload="metadata"
         />
       )}
     </div>
@@ -322,12 +401,21 @@ export default function Gallery() {
             // It's a local filename
             filename = item
             url = `/images/${item}`
-            thumbnail = `/images/${item}`
           }
           
           const lowerFilename = filename.toLowerCase()
           const isGif = lowerFilename.endsWith('.gif')
           const isVideo = lowerFilename.match(/\.(mp4|webm|mov)$/i)
+          
+          // Generate thumbnail path for images
+          if (!isUrl && !isVideo && !isGif) {
+            // For images, use thumbnail (always .jpg, regardless of original format)
+            const baseName = filename.replace(/\.[^/.]+$/, '')
+            thumbnail = `/images/thumbnails/${baseName}.jpg`
+          } else {
+            // For videos/GIFs, use the file itself
+            thumbnail = url
+          }
           
           return {
             filename,
@@ -513,23 +601,23 @@ export default function Gallery() {
               }}
               aria-label={`View ${item.alt || item.filename}`}
             >
-              {(item.type === 'image' || item.type === 'gif') ? (
+              {item.type === 'video' ? (
+                <LazyVideo
+                  src={item.url}
+                  alt={item.alt || item.filename}
+                />
+              ) : item.type === 'gif' ? (
                 <LazyImage
-                  src={item.thumbnail || item.url}
+                  src={item.url}
+                  thumbnail={item.thumbnail}
                   alt={item.alt || item.filename}
                 />
               ) : (
-                <>
-                  <LazyImage
-                    src={item.thumbnail || item.url}
-                    alt={item.alt || item.filename}
-                  />
-                  <VideoOverlay>
-                    <PlayIcon>
-                      <Play fill="currentColor" />
-                    </PlayIcon>
-                  </VideoOverlay>
-                </>
+                <LazyImage
+                  src={item.url}
+                  thumbnail={item.thumbnail}
+                  alt={item.alt || item.filename}
+                />
               )}
             </MediaItem>
           ))}

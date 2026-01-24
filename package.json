@@ -7,12 +7,16 @@
     "build": "vite build",
     "preview": "vite preview",
     "update-gallery": "node scripts/update-gallery.js",
+    "update-gallery-csv": "node scripts/update-gallery-csv.js",
+    "generate-thumbnails": "node scripts/generate-thumbnails.js",
+    "sync-gallery": "node scripts/sync-gallery.js",
     "upload-to-cdn": "node scripts/upload-to-cdn.js"
   },
   "dependencies": {
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "sharp": "^0.34.5",
     "styled-components": "^6.3.8"
   },
   "devDependencies": {

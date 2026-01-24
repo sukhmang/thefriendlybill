@@ -461,7 +461,13 @@ export default function Lightbox({ item, items, currentIndex, onClose, onNext, o
         {(item.type === 'image' || item.type === 'gif') ? (
           <MediaImage src={item.url} alt={item.alt || 'Gallery image'} />
         ) : item.type === 'video' ? (
-          <MediaVideo src={item.url} controls autoPlay>
+          <MediaVideo 
+            src={item.url} 
+            controls 
+            autoPlay 
+            loop
+            playsInline
+          >
             Your browser does not support the video tag.
           </MediaVideo>
         ) : (
