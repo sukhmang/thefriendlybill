@@ -27,13 +27,25 @@ function MemorialPage() {
 }
 
 function App() {
+  // Detect if we're on the homevideos subdomain
+  const isHomeVideosSubdomain = typeof window !== 'undefined' && 
+    window.location.hostname.startsWith('homevideos.')
+
   return (
     <ThemeProvider theme={theme}>
       <GlobalStyles />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<MemorialPage />} />
-          <Route path="/homevideos" element={<HomeVideos />} />
+          {isHomeVideosSubdomain ? (
+            // On subdomain: serve HomeVideos on root path
+            <Route path="/" element={<HomeVideos />} />
+          ) : (
+            // On main domain: normal routing
+            <>
+              <Route path="/" element={<MemorialPage />} />
+              {/* /homevideos route will redirect via vercel.json */}
+            </>
+          )}
         </Routes>
       </BrowserRouter>
     </ThemeProvider>

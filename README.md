@@ -22,7 +22,7 @@ src/
   │   ├── StoriesCard.jsx    # Stories section with "Submit your story" button
   │   ├── Gallery.jsx        # Photo/video gallery with infinite scroll
   │   ├── Lightbox.jsx       # Full-screen lightbox modal for gallery items
-  │   └── HomeVideos.jsx     # Secret home videos page (/homevideos)
+  │   └── HomeVideos.jsx     # Home videos page (homevideos.baljitgrewal.ca subdomain)
   ├── styles/
   │   ├── theme.js           # Design system theme (colors, typography, spacing)
   │   └── GlobalStyles.js    # Global CSS styles
@@ -153,7 +153,13 @@ npm run build
 
 ### Home Videos
 
-The `/homevideos` route displays embedded YouTube videos in a card layout. To add videos:
+The home videos page is hosted on a dedicated subdomain: **`homevideos.baljitgrewal.ca`**
+
+**Access:**
+- **Primary URL**: `https://homevideos.baljitgrewal.ca`
+- **Legacy redirect**: `https://baljitgrewal.ca/homevideos` automatically redirects to the subdomain
+
+The page displays embedded YouTube videos in a card layout with timeline, grid, and list views. To add videos:
 
 1. Edit `src/constants.js`
 2. Add video objects to the `HOME_VIDEOS` array:
@@ -180,7 +186,7 @@ export const HOME_VIDEOS = [
 - `year` (optional): Year the video was taken
 - `appearances` (optional): Array of people who appear in the video
 
-**Note:** This is a "secret" endpoint - it's not linked in the navigation, but accessible via direct URL.
+**Note:** This is a "secret" endpoint - it's not linked in the navigation, but accessible via direct URL. The subdomain is configured in Vercel and uses the same codebase as the main site.
 
 ---
 
@@ -325,7 +331,16 @@ All components use styled-components and access the theme via the `ThemeProvider
 
 ## Deployment
 
-The site is deployed using vercel. Just push your commits and merge the branch to Main, and it auto deploys to www.baljitgrewal.ca
+The site is deployed using Vercel. Just push your commits and merge the branch to Main, and it auto deploys to:
+- **Main site**: `www.baljitgrewal.ca` (or `baljitgrewal.ca`)
+- **Home Videos subdomain**: `homevideos.baljitgrewal.ca`
+
+Both domains are served from the same Vercel deployment. The subdomain is configured in Vercel's domain settings and uses DNS CNAME records pointing to Vercel.
+
+**Subdomain Configuration:**
+- The home videos page is served on the `homevideos.baljitgrewal.ca` subdomain
+- The old `/homevideos` route on the main domain automatically redirects to the subdomain (configured in `vercel.json`)
+- Subdomain detection is handled in `App.jsx` to serve the correct component based on hostname
 
 ### Build for Production
 ```bash
