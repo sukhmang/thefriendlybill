@@ -84,7 +84,7 @@ const NavButton = styled.button`
     right: 0;
     height: 3px;
     background-color: ${props => props.theme.colors.accent};
-    opacity: ${props => (props.$isActive && props.$portraitVisible) ? 1 : 0};
+    opacity: ${props => props.$isActive && props.$portraitVisible ? 1 : 0};
     transition: opacity 0.3s ease;
     border-radius: 2px 2px 0 0;
   }

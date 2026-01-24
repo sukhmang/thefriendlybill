@@ -124,46 +124,11 @@ npm run build
 
 ### Home Videos
 
-The `/homevideos` route displays embedded YouTube videos with multiple layout views and password protection. This is a "secret" endpoint - it's not linked in the navigation, but accessible via direct URL.
+The `/homevideos` route displays embedded YouTube videos in a card layout. To add videos:
 
-#### Features
+1. Edit `src/constants.js`
+2. Add video objects to the `HOME_VIDEOS` array:
 
-- **Password Protection**: Private family videos are protected with an access phrase
-- **Three Layout Views**: 
-  - **Timeline View**: Chronological timeline with scroll snapping (desktop only)
-  - **Grid View**: Responsive card grid layout
-  - **List View**: Compact list with thumbnails
-- **Collections**: Group related videos together
-- **Video Metadata**: Display location, year, description, and appearances
-- **Responsive Design**: Optimized for mobile and desktop
-- **Session Persistence**: Authentication persists across page refreshes
-
-#### Layout Views
-
-**Timeline View** (Default):
-- Chronological display with a vertical timeline line
-- Videos alternate left/right on desktop, stacked on mobile
-- Scroll snapping enabled on desktop for smooth navigation
-- Year labels highlight each time period
-- Best for viewing videos in chronological order
-
-**Grid View**:
-- Responsive card grid (auto-fill, min 350px per card)
-- Collections displayed as grouped cards
-- Single column on mobile
-- Best for browsing all videos at once
-
-**List View**:
-- Compact horizontal list with thumbnails
-- Shows title, location, year, and appearances
-- Efficient use of vertical space
-- Best for quick scanning of video metadata
-
-#### Adding Videos
-
-Edit `src/constants.js` and add video objects to the `HOME_VIDEOS` array:
-
-**Individual Videos:**
 ```javascript
 export const HOME_VIDEOS = [
   {
@@ -178,55 +143,15 @@ export const HOME_VIDEOS = [
 ]
 ```
 
-**Video Collections:**
-```javascript
-export const HOME_VIDEOS = [
-  {
-    collection: "Family Gathering 2020", // Collection name
-    description: "Videos from our family gathering", // Optional collection description
-    year: 2020,
-    location: "Edmonton, Canada", // Optional location
-    videos: [
-      {
-        id: "VIDEO_ID_1",
-        title: "Video 1 Title",
-        description: "Description of video 1",
-        appearances: ["Baljit Grewal", "Family Member 1"],
-      },
-      {
-        id: "VIDEO_ID_2",
-        title: "Video 2 Title",
-        description: "Description of video 2",
-        appearances: ["Baljit Grewal", "Family Member 2"],
-      },
-    ]
-  },
-  // Add more collections or individual videos...
-]
-```
-
 **Fields:**
-
-**For Individual Videos:**
 - `id` (required): YouTube video ID
 - `title` (required): Video title
 - `description` (optional): Brief description
 - `location` (optional): Location where video was taken
-- `year` (optional): Year the video was taken (used for sorting)
+- `year` (optional): Year the video was taken
 - `appearances` (optional): Array of people who appear in the video
 
-**For Collections:**
-- `collection` (required): Collection name
-- `description` (optional): Collection description
-- `year` (optional): Year of the collection (used for sorting)
-- `location` (optional): Location of the collection
-- `videos` (required): Array of video objects (each with `id`, `title`, and optional `description`, `appearances`)
-
-**Notes:**
-- Videos are automatically sorted by year (oldest first)
-- Collections and individual videos are mixed together in chronological order
-- The access phrase is stored in `src/components/HomeVideos.jsx` (look for `ACCESS_PHRASE` constant)
-- Authentication persists in localStorage for the session
+**Note:** This is a "secret" endpoint - it's not linked in the navigation, but accessible via direct URL.
 
 ---
 
