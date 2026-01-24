@@ -442,8 +442,12 @@ const renderEventDetails = (event, isMain = false, onShowProgram = null) => {
                 </span>
               </DetailLabel>
               <DetailValue>
-                <strong>{event.rsvp.name}</strong>
-                <br />
+                {event.rsvp.name && (
+                  <>
+                    <strong>{event.rsvp.name}</strong>
+                    <br />
+                  </>
+                )}
                 <a 
                   href={`tel:${event.rsvp.phone.replace(/\D/g, '')}`}
                   style={{ 
