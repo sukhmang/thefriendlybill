@@ -102,6 +102,47 @@ const MediaVideo = styled.video`
   object-fit: cover;
 `
 
+const VideoProgressBar = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background-color: rgba(255, 255, 255, 0.3);
+  z-index: 2;
+  overflow: hidden;
+`
+
+const VideoProgressFill = styled.div`
+  height: 100%;
+  background-color: ${props => props.theme.colors.accent};
+  width: ${props => props.$progress}%;
+  transition: width 0.1s linear;
+`
+
+const VideoIconOverlay = styled.div`
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.4);
+  border-radius: ${props => props.theme.borderRadius.sm};
+  z-index: 3;
+  opacity: ${props => props.$visible ? 1 : 0};
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+
+  svg {
+    width: 1rem;
+    height: 1rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+`
+
 const Placeholder = styled.div`
   position: absolute;
   top: 0;
@@ -422,6 +463,9 @@ function LazyImage({ src, alt, thumbnail, onLoad }) {
 function LazyVideo({ src, gridUrl, thumbnail, alt }) {
   const [inView, setInView] = useState(false)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [progress, setProgress] = useState(0)
+  const [duration, setDuration] = useState(0)
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false)
   const videoRef = useRef(null)
   const containerRef = useRef(null)
 
@@ -432,6 +476,11 @@ function LazyVideo({ src, gridUrl, thumbnail, alt }) {
           const nowInView = entry.isIntersecting
           
           setInView(nowInView)
+          
+          // Reset loading state when going out of view (so icon shows again if video needs to reload)
+          if (!nowInView) {
+            setIsVideoLoaded(false)
+          }
           
           // Pause video when it goes out of view, play when in view
           if (videoRef.current) {
@@ -463,6 +512,49 @@ function LazyVideo({ src, gridUrl, thumbnail, alt }) {
     }
   }, [isPlaying])
 
+  // Track video progress
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    const updateProgress = () => {
+      if (video.duration) {
+        const currentProgress = (video.currentTime / video.duration) * 100
+        setProgress(currentProgress)
+        setDuration(video.duration)
+      }
+    }
+
+    const handleTimeUpdate = () => {
+      updateProgress()
+    }
+
+    const handleLoadedMetadata = () => {
+      setDuration(video.duration)
+    }
+
+    const handleCanPlay = () => {
+      // Video has loaded enough data to start playing
+      setIsVideoLoaded(true)
+    }
+
+    const handleEnded = () => {
+      // Reset progress when video loops
+      setProgress(0)
+    }
+
+    video.addEventListener('timeupdate', handleTimeUpdate)
+    video.addEventListener('loadedmetadata', handleLoadedMetadata)
+    video.addEventListener('canplay', handleCanPlay)
+    video.addEventListener('ended', handleEnded)
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate)
+      video.removeEventListener('loadedmetadata', handleLoadedMetadata)
+      video.removeEventListener('canplay', handleCanPlay)
+      video.removeEventListener('ended', handleEnded)
+    }
+  }, [inView, isPlaying])
 
   // Use optimized grid URL if available, otherwise fall back to original
   const videoSrc = gridUrl || src
@@ -478,16 +570,28 @@ function LazyVideo({ src, gridUrl, thumbnail, alt }) {
       )}
       {!inView && !thumbnail && <Placeholder />}
       {inView && (
-        <MediaVideo
-          ref={videoRef}
-          src={videoSrc}
-          poster={thumbnail} // Show thumbnail while loading
-          muted
-          loop
-          playsInline
-          autoPlay
-          preload="metadata"
-        />
+        <>
+          <MediaVideo
+            ref={videoRef}
+            src={videoSrc}
+            poster={thumbnail} // Show thumbnail while loading
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="metadata"
+          />
+          {!isVideoLoaded && (
+            <VideoIconOverlay $visible={!isVideoLoaded}>
+              <Video />
+            </VideoIconOverlay>
+          )}
+          {duration > 0 && (
+            <VideoProgressBar>
+              <VideoProgressFill $progress={progress} />
+            </VideoProgressBar>
+          )}
+        </>
       )}
     </div>
   )
