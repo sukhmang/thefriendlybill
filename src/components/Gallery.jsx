@@ -163,14 +163,14 @@ const LoadMoreTrigger = styled.div`
 const Badge = styled.div`
   display: inline-flex;
   align-items: center;
-  padding: 0.5rem 1rem;
+  padding: 0.375rem 0.75rem;
   background-color: ${props => props.theme.colors.accent}15;
   border: 1px solid ${props => props.theme.colors.accent}40;
   border-radius: ${props => props.theme.borderRadius.sm};
   font-size: ${props => props.theme.typography.sizes.xs};
   font-weight: ${props => props.theme.typography.weights.semibold};
   color: ${props => props.theme.colors.accent};
-  margin-bottom: 1rem;
+  margin-left: 0.5rem;
 `
 
 const ToggleContainer = styled.div`
@@ -557,9 +557,8 @@ export default function Gallery() {
         <Title>
           <Images size={28} />
           Gallery
+          <Badge>More pictures coming soon!</Badge>
         </Title>
-
-        <Badge>More pictures coming soon!</Badge>
 
         <ToggleContainer>
           <ToggleLabel>Media Type</ToggleLabel>
