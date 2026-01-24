@@ -16,9 +16,10 @@ src/
   ├── components/
   │   ├── Layout.jsx         # Main container with centered content
   │   ├── Hero.jsx           # Hero section with portrait, info, and CTA buttons
-  │   ├── StickyNav.jsx      # Sticky navigation bar (Watch, Event Details, Gallery)
+  │   ├── StickyNav.jsx      # Sticky navigation bar (Watch, Events, Stories, Gallery)
   │   ├── LivestreamCard.jsx # Video section (Slideshow & Funeral Service)
   │   ├── EventDetailsCard.jsx # Event details with collapsible past events
+  │   ├── StoriesCard.jsx    # Stories section with "Submit your story" button
   │   ├── Gallery.jsx        # Photo/video gallery with infinite scroll
   │   ├── Lightbox.jsx       # Full-screen lightbox modal for gallery items
   │   └── HomeVideos.jsx     # Secret home videos page (/homevideos)
@@ -85,9 +86,20 @@ npm run build
   - RSVP information (for Celebration of Life)
 - Badges for special event types (e.g., "Open House Style", "RSVP Event")
 
+### Stories
+- **Stories section** for sharing memories and stories
+- "Coming soon" badge indicating stories will be displayed here
+- **"Submit your story!" button** that opens email client with:
+  - Pre-filled subject: "My favorite story about Bill Grewal"
+  - Pre-filled body template for easy submission
+
 ### Gallery
 - **Infinite Scroll**: Automatically loads more images as you scroll
+  - Initial load: First 24 items load automatically if gallery is visible on page load
+  - Additional items load as user scrolls near them (50px before entering viewport)
 - **Lazy Loading**: Images/videos only load when entering viewport (50px before)
+  - Uses IntersectionObserver for efficient viewport detection
+  - Items already visible on page load start loading immediately
 - **Thumbnail System**: 
   - **Local images**: Use optimized thumbnails in grid view (400px width, ~100-200KB each)
   - **Cloudinary images**: Use on-the-fly thumbnails (400x400px, auto quality)
@@ -95,15 +107,25 @@ npm run build
   - Automatic fallback to full image if thumbnail missing
 - **Video Support**: 
   - **Local videos**: MP4s autoplay, loop, and are muted in grid view
-  - **Cloudinary videos**: Same behavior, hosted externally
+  - **Cloudinary videos**: Optimized for mobile with aggressive compression
+    - **Grid view**: 480px width, economy quality, modern codecs, no audio track
+    - **Lightbox**: Full quality with modern codecs
+    - **Poster/thumbnail**: Static JPG frame (400x400px) generated from video
+  - **Video Progress Bar**: Shows video length, current progress, and remaining time
+    - Appears as overlay on videos in grid view
+    - Updates in real-time as video plays
+  - **Video Loading Indicator**: Subtle icon overlay appears on videos that haven't loaded yet
+    - Disappears once video is ready to play
+  - **Smart Playback**: Videos automatically pause when scrolled out of view
+    - Resume playing when scrolled back into view (50% visibility threshold)
   - Videos play with sound, autoplay, and loop in lightbox
 - **Filter Toggle**: Slideable toggle to filter by:
   - Both (default)
   - Images Only
   - Videos Only
 - **CSV-Based Sorting**: Gallery order controlled by `gallery.csv` with `default_sort` column
-  - **Video Priority**: Videos appear in first 120 positions (use `npm run sort-gallery-csv`)
-  - Videos prioritized to appear in first 120 items
+  - **Video Priority**: Videos appear in first 150 positions (use `npm run sort-gallery-csv`)
+  - Videos prioritized to appear in first 150 items
   - Custom sort order for curated display
 - **Lightbox**: Full-screen viewing with:
   - Auto-hiding navigation buttons (appear on hover, hide after 1s inactivity)
@@ -114,11 +136,18 @@ npm run build
 - **Image Management**: Uses `public/images/images.json` (synced from `gallery.csv`)
 
 ### Navigation
-- Sticky navigation bar with three sections:
+- **Sticky navigation bar** with four sections:
   - **Watch**: Scrolls to video section
-  - **Event Details**: Scrolls to event information
+  - **Events**: Scrolls to event information (renamed from "Event Details")
+  - **Stories**: Scrolls to stories section
   - **Gallery**: Scrolls to photo gallery
+- **Active section tracking**: Automatically highlights the current section based on scroll position
+  - Active section has **bold text** and **primary color**
+  - **Sliding underline indicator** animates to the active section
+  - Underline only appears after scrolling past the hero section (when portrait image appears)
+- **Animated portrait**: Portrait image appears in navbar after scrolling past hero section
 - Smooth scrolling with proper offset for sticky nav
+- Full-width responsive design (works correctly on mobile)
 
 ## Configuration
 
@@ -199,12 +228,12 @@ export const EVENT_DATA = {
 
 ### Current Gallery Statistics
 
-- **Total Files**: 679 media files
-- **Images**: 647 files
-- **Videos (MP4)**: 32 files
+- **Total Files**: 697+ media files
+- **Images**: 656+ files
+- **Videos (MP4)**: 41+ files
 - **Total Size**: ~1.2GB
-- **Location**: `public/images/`
-- **Thumbnails**: Generated on-demand (saved to `public/images/thumbnails/`)
+- **Location**: `public/images/` (local) + Cloudinary (hosted)
+- **Thumbnails**: Generated on-demand (saved to `public/images/thumbnails/`) or Cloudinary on-the-fly
 
 ### Gallery Workflow
 
@@ -231,7 +260,7 @@ The gallery uses a **CSV-based management system** for metadata and sorting:
    ```bash
    npm run sort-gallery-csv
    ```
-   This ensures videos appear in the first 120 positions, images after.
+   This ensures videos appear in the first 150 positions, images after.
 
    **This is the recommended workflow!** Two commands sync and sort everything.
 
@@ -244,7 +273,7 @@ The gallery uses a **CSV-based management system** for metadata and sorting:
 
 Edit `gallery.csv` and set `default_sort` values:
 - Lower numbers = appear first
-- Videos are currently set to appear in first 120 items
+- Videos are currently set to appear in first 150 items
 - Default for new files: 10000 (appears at end)
 
 Then sync:
@@ -254,10 +283,19 @@ node scripts/sync-images-json-from-csv.js
 
 ### Gallery Features
 
-- **Infinite Scroll**: Loads 24 items at a time, more as you scroll
+- **Infinite Scroll**: Loads 24 items initially, more as you scroll
+  - First 24 items load automatically if gallery is visible on page load
 - **Lazy Loading**: Images/videos only load when near viewport (50px before)
+  - Uses IntersectionObserver for efficient detection
+  - Items already visible start loading immediately
 - **Thumbnail System**: Images use thumbnails in grid, full-res in lightbox
-- **Video Support**: MP4s autoplay (muted) in grid, with sound in lightbox
+- **Video Support**: 
+  - **Optimized for mobile**: Cloudinary videos use aggressive compression in grid view
+    - 480px width, economy quality, modern codecs, no audio
+  - **Progress Bar**: Real-time progress overlay showing length, current time, and remaining time
+  - **Loading Indicator**: Icon overlay on videos that haven't loaded yet
+  - **Smart Playback**: Videos pause when out of view, resume when in view
+  - MP4s autoplay (muted) in grid, with sound in lightbox
 - **Filter Toggle**: Switch between Images, Videos, or Both
 - **Lightbox**: Click any item to view full-screen
   - Navigation buttons appear on hover
@@ -330,6 +368,32 @@ To use Cloudinary for hosting videos (recommended to keep repo size small):
 
 **Note:** The gallery code already supports Cloudinary URLs - just add them to `images.json` or let the sync script handle it!
 
+### Video Optimization Details
+
+The gallery implements aggressive video optimization to reduce data usage, especially important for mobile users:
+
+**Grid View Optimization:**
+- **Resolution**: Capped at 480px width (sufficient for mobile grid view)
+- **Quality**: `q_auto:eco` - Economy quality mode (aggressive compression)
+- **Codec**: `f_auto` - Automatically uses modern codecs (AV1/H.265) which are ~30% smaller
+- **Audio**: `ac_none` - Removed audio track (saves ~10% more, videos autoplay muted anyway)
+- **Result**: Videos are ~70-80% smaller than original, perfect for grid view
+
+**Lightbox View:**
+- **Quality**: `q_auto` - High quality but still optimized
+- **Codec**: `f_auto` - Modern codecs for best compression
+- **Result**: Full quality viewing experience with optimized file sizes
+
+**Poster/Thumbnail:**
+- **Format**: Static JPG frame extracted from video
+- **Size**: 400x400px, auto quality
+- **Usage**: Shows before video loads, provides instant visual feedback
+
+**Smart Playback:**
+- Videos automatically pause when scrolled out of viewport (saves bandwidth)
+- Resume playing when scrolled back into view (50% visibility threshold)
+- Uses IntersectionObserver for efficient viewport detection
+
 ### Important Notes
 
 - **Current Gallery Size**: ~307MB (647 images, 4 local videos)
@@ -358,10 +422,10 @@ To use Cloudinary for hosting videos (recommended to keep repo size small):
   - **Cloudinary Support**: Automatically fetches images and videos from your Cloudinary account
 - `npm run generate-thumbnails` - Generate thumbnails for all local images (requires `sharp` package)
   - Only processes local images (Cloudinary images use on-the-fly thumbnails)
-- `npm run sort-gallery-csv` - **Sort gallery with video priority** - Assigns videos to first 120 positions, images after
+- `npm run sort-gallery-csv` - **Sort gallery with video priority** - Assigns videos to first 150 positions, images after
   - Can be run anytime to re-sort the gallery
-  - Videos get sort values 1-120, images get 121-10000
-- `node scripts/randomize-sort-order.js` - Randomly assign sort orders (videos in first 120) - Legacy, use `sort-gallery-csv` instead
+  - Videos get sort values 1-150, images get 151-10000
+- `node scripts/randomize-sort-order.js` - Randomly assign sort orders (videos in first 150) - Legacy, use `sort-gallery-csv` instead
 - `node scripts/sync-images-json-from-csv.js` - Sync `images.json` from `gallery.csv` (preserves sort order)
 
 
@@ -382,8 +446,17 @@ To use Cloudinary for hosting videos (recommended to keep repo size small):
 - ✅ **Thumbnail system** - Optimized thumbnails for images (400px, ~100-200KB)
 - ✅ **CSV-based gallery management** - Full metadata support with `gallery.csv`
 - ✅ **Custom sort ordering** - `default_sort` column controls display order
-- ✅ **Video prioritization** - Videos appear in first 120 items
+- ✅ **Video prioritization** - Videos appear in first 150 items (increased from 120)
 - ✅ **Gallery sync scripts** - Automated CSV/JSON synchronization
+- ✅ **Active section tracking** - Navbar automatically highlights current section based on scroll position
+- ✅ **Sliding underline indicator** - Animated underline that moves to active navbar item
+- ✅ **Stories section** - New section with "Submit your story" email button
+- ✅ **Video optimization** - Cloudinary videos optimized for mobile (480px, economy quality, no audio)
+- ✅ **Video progress bars** - Real-time progress overlay on gallery videos
+- ✅ **Video loading indicators** - Icon overlay on videos that haven't loaded yet
+- ✅ **Smart video playback** - Videos pause when out of view, resume when in view
+- ✅ **Improved lazy loading** - First 24 items load automatically if gallery is visible
+- ✅ **Mobile layout fixes** - Full-width navbar and content on mobile devices
 
 ---
 
@@ -428,7 +501,7 @@ npm run sync-gallery
 ```bash
 npm run sort-gallery-csv
 ```
-This ensures videos appear in the first 120 positions.
+This ensures videos appear in the first 150 positions.
 
 ---
 
@@ -490,7 +563,7 @@ npm run update-gallery-csv
 
 #### sort-gallery-csv.js ⭐ **NEW - Gallery Sorter**
 
-**Sorts gallery.csv with video priority - videos appear in first 120 positions.**
+**Sorts gallery.csv with video priority - videos appear in first 150 positions.**
 
 **Usage:**
 ```bash
@@ -499,8 +572,8 @@ npm run sort-gallery-csv
 
 **What it does:**
 1. **Separates videos and images** from CSV
-2. **Assigns videos** to sort values 1-120 (first 120 positions)
-3. **Assigns images** to sort values 121-10000 (after videos)
+2. **Assigns videos** to sort values 1-150 (first 150 positions)
+3. **Assigns images** to sort values 151-10000 (after videos)
 4. **Randomizes order** within each group for variety
 5. **Writes sorted CSV** back to file
 
@@ -510,18 +583,18 @@ npm run sort-gallery-csv
 - **Anytime you want to re-sort** - Run this to apply video priority
 
 **Features:**
-- Videos always appear in first 120 items
+- Videos always appear in first 150 items
 - Images appear after videos
 - Can be run multiple times (re-randomizes each time)
 - Preserves all metadata (alt, category, tags, etc.)
 
 **Example output:**
 ```
-📊 Found 36 video(s) and 647 image(s)
+📊 Found 41 video(s) and 656 image(s)
 ✅ Successfully sorted gallery.csv
-   Videos: 36 (assigned sort values 1-120)
-   Images: 647 (assigned sort values 121-10000)
-✅ Verification: 36 of 36 videos appear in first 120 items
+   Videos: 41 (assigned sort values 1-150)
+   Images: 656 (assigned sort values 151-10000)
+✅ Verification: 41 of 41 videos appear in first 150 items
 ```
 
 ---
@@ -633,7 +706,7 @@ node scripts/randomize-sort-order.js
 
 **What it does:**
 1. Reads `gallery.csv` and separates videos from images
-2. Assigns videos random sort values 1-120 (ensures all videos in first 120 items)
+2. Assigns videos random sort values 1-150 (ensures all videos in first 150 items)
 3. Assigns images random sort values 1-10000
 4. Sorts all entries by `default_sort` value
 5. Writes updated CSV
@@ -641,7 +714,7 @@ node scripts/randomize-sort-order.js
 **When to use:**
 - One-time initialization of sort order
 - To randomize gallery display order
-- To ensure videos appear prominently (first 120 items)
+- To ensure videos appear prominently (first 150 items)
 
 **Note:** After running, sync `images.json` with `sync-images-json-from-csv.js`
 
