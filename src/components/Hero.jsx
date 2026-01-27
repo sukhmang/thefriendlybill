@@ -193,9 +193,9 @@ export default function Hero() {
             {MEMORIAL_DATA.welcomeMessage}
           </WelcomeText>
           <ButtonWrapper>
-            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Slideshow">
+            <CTAButton onClick={() => scrollToSection('watch')} aria-label="Memories">
               <Play fill="currentColor" />
-              Slideshow
+              Memories
             </CTAButton>
             <CTAButton onClick={() => scrollToSection('watch')} aria-label="Service">
               <Play fill="currentColor" />

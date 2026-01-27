@@ -18,7 +18,8 @@ function MemorialPage() {
       <Layout>
         <Hero />
         <LivestreamCard />
-        <EventDetailsCard />
+        {/* Events section hidden - events are now finished */}
+        {/* <EventDetailsCard /> */}
         <StoriesCard />
         <Gallery />
       </Layout>
