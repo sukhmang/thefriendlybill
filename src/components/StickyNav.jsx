@@ -228,7 +228,7 @@ export default function StickyNav() {
 
   // Track active section based on scroll position
   useEffect(() => {
-    const sections = ['watch', 'event-details', 'stories', 'gallery']
+    const sections = ['watch', 'stories', 'gallery'] // 'event-details' removed - events are finished
     
     const updateActiveSection = () => {
       const navHeight = 100
@@ -385,7 +385,8 @@ export default function StickyNav() {
               <span>Watch</span>
             </NavButton>
             
-            <NavButton
+            {/* Events button hidden - events are now finished */}
+            {/* <NavButton
               ref={eventDetailsButtonRef}
               onClick={() => scrollToSection('event-details')}
               aria-label="Events"
@@ -394,7 +395,7 @@ export default function StickyNav() {
             >
               <Calendar />
               <span>Events</span>
-            </NavButton>
+            </NavButton> */}
             
             <NavButton
               ref={storiesButtonRef}

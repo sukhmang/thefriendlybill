@@ -486,10 +486,10 @@ export default function LivestreamCard() {
   return (
     <Card id="watch">
       <VideosContainer>
-        {/* Slideshow on top */}
+        {/* Memories on top */}
         {EVENT_DATA.youtubeLoopVideoId ? (
           <VideoWrapper>
-            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+            <VideoLabel>Memories: In Loving Memory, Baljit Singh Grewal</VideoLabel>
             <VideoContainer>
               <VideoIframe
                 src={getYouTubeLoopEmbedUrl()}
@@ -501,7 +501,7 @@ export default function LivestreamCard() {
           </VideoWrapper>
         ) : (
           <VideoWrapper>
-            <VideoLabel>Slideshow: In Loving Memory, Baljit Singh Grewal</VideoLabel>
+            <VideoLabel>Memories: In Loving Memory, Baljit Singh Grewal</VideoLabel>
             <ComingSoonPlaceholder>
               Coming soon
             </ComingSoonPlaceholder>
