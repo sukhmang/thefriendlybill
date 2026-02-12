@@ -6,8 +6,9 @@
  * One-stop script to sync the entire gallery system when files are added/removed.
  * This script runs all necessary operations:
  * 1. Updates gallery.csv (adds new files from local folder AND Cloudinary, removes deleted files)
- * 2. Generates thumbnails for new local images (Cloudinary videos don't need thumbnails)
- * 3. Syncs images.json from gallery.csv (preserves sort order)
+ * 2. Sorts gallery.csv so videos appear in the first 130 positions, then images
+ * 3. Generates thumbnails for new local images (Cloudinary videos don't need thumbnails)
+ * 4. Syncs images.json from gallery.csv (preserves sort order)
  * 
  * Supports:
  * - Local images/videos in public/images/
@@ -42,8 +43,22 @@ try {
     process.exit(1);
   }
 
-  // Step 2: Generate thumbnails
-  console.log('🖼️  Step 2: Generating thumbnails...');
+  // Step 2: Sort gallery (videos first 130, then images)
+  console.log('🔀 Step 2: Sorting gallery (videos first 130, then images)...');
+  console.log('─'.repeat(50));
+  try {
+    execSync('npm run sort-gallery-csv', {
+      cwd: PROJECT_ROOT,
+      stdio: 'inherit'
+    });
+    console.log('');
+  } catch (error) {
+    console.error('❌ Error sorting gallery.csv:', error.message);
+    process.exit(1);
+  }
+
+  // Step 3: Generate thumbnails
+  console.log('🖼️  Step 3: Generating thumbnails...');
   console.log('─'.repeat(50));
   try {
     execSync('npm run generate-thumbnails', {
@@ -63,8 +78,8 @@ try {
     }
   }
 
-  // Step 3: Sync images.json from gallery.csv
-  console.log('📋 Step 3: Syncing images.json from gallery.csv...');
+  // Step 4: Sync images.json from gallery.csv
+  console.log('📋 Step 4: Syncing images.json from gallery.csv...');
   console.log('─'.repeat(50));
   try {
     execSync('node scripts/sync-images-json-from-csv.js', {
@@ -80,6 +95,7 @@ try {
   console.log('✅ Gallery sync complete!');
   console.log('\n📊 Summary:');
   console.log('   ✅ gallery.csv updated');
+  console.log('   ✅ gallery.csv sorted (videos first 130, then images)');
   console.log('   ✅ Thumbnails generated (if sharp is installed)');
   console.log('   ✅ images.json synced from gallery.csv');
   console.log('\n💡 Your gallery is now fully synced and ready!');
